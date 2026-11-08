@@ -283,7 +283,7 @@
     const columns = [
       { title: '分类', en: 'Category', items: data.categories.slice(0, 5), total: data.categories.length, type: 'category' },
       { title: '标签', en: 'Tag', items: data.tags.slice(0, 5), total: data.tags.length, type: 'tag' },
-      { title: '文章', en: 'Keyword', items: data.posts.slice(0, limitPosts), total: data.posts.length, type: 'post' },
+      { title: '关键字', en: 'Keyword', items: data.posts.slice(0, limitPosts), total: data.posts.length, type: 'post' },
     ];
 
     target.innerHTML = `<div class="search-columns">${columns
@@ -292,15 +292,15 @@
           ? column.items
               .map((item) => (column.type === 'post' ? postResultMarkup(item, tokens) : taxonomyMarkup(item, tokens, column.type)))
               .join('')
-          : `<p class="search-empty">没有匹配的${column.title}。</p>`;
+          : `<p class="search-empty">没有匹配的关键字结果。</p>`;
         const more =
           column.type === 'post' && showMore && column.total > column.items.length
-            ? `<a class="search-more" href="${withBase(`/search/?q=${encodeURIComponent(query)}`)}">查看全部 ${column.total} 篇 ${'→'}</a>`
+            ? `<a class="search-more" href="${withBase(`/search/?q=${encodeURIComponent(query)}`)}">查看全部 ${column.total} 条 ${'→'}</a>`
             : '';
         return `<section class="search-column">
           <div class="search-column-head">
             <span class="search-column-title">${column.title}<small>${column.en}</small></span>
-            <span class="search-column-count">共 ${column.total} ${column.type === 'post' ? '篇' : '个'}</span>
+            <span class="search-column-count">共 ${column.total} ${column.type === 'post' ? '条' : '个'}</span>
           </div>
           <div class="search-column-body">${body}${more}</div>
         </section>`;
@@ -308,7 +308,7 @@
       .join('')}</div>`;
 
     if (countTarget) {
-      countTarget.textContent = `${data.categories.length} 分类 · ${data.tags.length} 标签 · ${data.posts.length} 文章`;
+      countTarget.textContent = `${data.categories.length} 分类 · ${data.tags.length} 标签 · ${data.posts.length} 条关键字`;
     }
   }
 

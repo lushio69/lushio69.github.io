@@ -1,0 +1,496 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { renderMarkdown } from './lib/markdown.mjs';
+import * as templates from './lib/templates.mjs';
+import {
+  absoluteUrl,
+  applyBaseToHtml,
+  copyDir,
+  escapeAttr,
+  escapeHtml,
+  formatDate,
+  normalizeBase,
+  readingTime,
+  slugify,
+  stripHtml,
+  truncate,
+  withBase,
+  writeFile,
+  xmlEscape,
+} from './lib/utils.mjs';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const DIST = path.join(ROOT, 'dist');
+const POSTS_DIR = path.join(ROOT, 'content', 'posts');
+const PAGES_DIR = path.join(ROOT, 'content', 'pages');
+const ASSETS_DIR = path.join(ROOT, 'src', 'assets');
+
+const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'site.config.json'), 'utf8'));
+const base = normalizeBase(config.basePath);
+const siteUrl = String(config.url || '').replace(/\/+$/, '');
+const buildDate = new Date().toISOString();
+const buildDay = buildDate.slice(0, 10);
+
+main();
+
+function main() {
+  validateConfig();
+  fs.rmSync(DIST, { recursive: true, force: true });
+  fs.mkdirSync(DIST, { recursive: true });
+
+  if (fs.existsSync(ASSETS_DIR)) copyDir(ASSETS_DIR, path.join(DIST, 'assets'));
+
+  const posts = loadPosts();
+  const pages = loadPages();
+  const tags = buildTags(posts);
+
+  if (posts.length === 0) {
+    console.warn('  ! No published posts found.');
+  }
+
+  writeAll(posts, pages, tags);
+  writeFeeds(posts, tags);
+  writeSearchIndex(posts);
+  writeSitemap(posts, pages, tags);
+  writeRobots();
+  write404(posts);
+  if (config.customDomain) writeFile(path.join(DIST, 'CNAME'), `${config.customDomain}\n`);
+  writeFile(path.join(DIST, '.nojekyll'), '');
+
+  console.log(`\n  Built ${posts.length} posts, ${pages.length} pages, ${tags.length} tags.`);
+  console.log(`  Output: ${path.relative(ROOT, DIST)}\\`);
+  console.log(`  Local:  http://localhost:4173${base}\n`);
+}
+
+function validateConfig() {
+  for (const key of ['title', 'author', 'url', 'description']) {
+    if (!config[key]) throw new Error(`site.config.json is missing "${key}".`);
+  }
+  if (!config.hero || !config.hero.title) throw new Error('site.config.json is missing the hero section.');
+  if (!Array.isArray(config.nav)) throw new Error('site.config.json "nav" must be an array.');
+  if (!Array.isArray(config.social)) config.social = [];
+}
+
+function parseFrontMatter(source, filePath) {
+  const normalized = source.replace(/\r\n?/g, '\n');
+  const match = normalized.match(/^---\n([\s\S]*?)\n---(?:\n|$)/);
+  if (!match) {
+    throw new Error(`Missing front matter in ${path.relative(ROOT, filePath)}. Start the file with ---.`);
+  }
+  const data = parseSimpleYaml(match[1], filePath);
+  const body = normalized.slice(match[0].length).trim();
+  return { data, body };
+}
+
+function parseSimpleYaml(source, filePath) {
+  const data = {};
+  const lines = source.split('\n');
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const raw = lines[i];
+    if (!raw.trim() || raw.trim().startsWith('#')) continue;
+    const match = raw.match(/^([A-Za-z][\w-]*):(?:\s*(.*))?$/);
+    if (!match) {
+      throw new Error(`Unsupported front matter line in ${path.relative(ROOT, filePath)}: ${raw}`);
+    }
+    const key = match[1];
+    let value = (match[2] || '').trim();
+
+    if (value === '|' || value === '>') {
+      const block = [];
+      while (i + 1 < lines.length && (/^\s{2,}/.test(lines[i + 1]) || !lines[i + 1].trim())) {
+        i += 1;
+        block.push(lines[i].replace(/^\s{2}/, ''));
+      }
+      value = value === '|' ? block.join('\n').trim() : block.join(' ').replace(/\s+/g, ' ').trim();
+      data[key] = value;
+      continue;
+    }
+
+    if (!value) {
+      const items = [];
+      while (i + 1 < lines.length) {
+        const item = lines[i + 1].match(/^\s{2,}-\s+(.*)$/);
+        if (!item) break;
+        items.push(parseScalar(item[1]));
+        i += 1;
+      }
+      data[key] = items;
+      continue;
+    }
+
+    if (/^\[.*\]$/.test(value)) {
+      const inner = value.slice(1, -1).trim();
+      data[key] = inner ? splitInlineList(inner).map(parseScalar) : [];
+      continue;
+    }
+
+    data[key] = parseScalar(value);
+  }
+
+  return data;
+}
+
+function splitInlineList(value) {
+  const items = [];
+  let current = '';
+  let quote = '';
+  for (const char of value) {
+    if ((char === '"' || char === "'") && !quote) quote = char;
+    else if (char === quote) quote = '';
+    if (char === ',' && !quote) {
+      items.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  if (current.trim()) items.push(current.trim());
+  return items;
+}
+
+function parseScalar(value) {
+  const text = String(value).trim();
+  if ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("'") && text.endsWith("'"))) {
+    return text.slice(1, -1).replace(/\\"/g, '"').replace(/''/g, "'");
+  }
+  if (text === 'true') return true;
+  if (text === 'false') return false;
+  return text;
+}
+
+function assertDate(value, filePath) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
+    throw new Error(`Invalid date "${value}" in ${path.relative(ROOT, filePath)}. Use YYYY-MM-DD.`);
+  }
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    throw new Error(`Invalid calendar date "${value}" in ${path.relative(ROOT, filePath)}.`);
+  }
+  return String(value);
+}
+
+function loadPosts() {
+  if (!fs.existsSync(POSTS_DIR)) return [];
+  const posts = [];
+  const slugs = new Set();
+
+  for (const file of fs.readdirSync(POSTS_DIR).filter((name) => name.endsWith('.md')).sort()) {
+    const filePath = path.join(POSTS_DIR, file);
+    const source = fs.readFileSync(filePath, 'utf8');
+    const { data, body } = parseFrontMatter(source, filePath);
+    if (data.draft === true) continue;
+    if (!data.title) throw new Error(`Missing title in ${path.relative(ROOT, filePath)}.`);
+
+    const date = assertDate(data.date, filePath);
+    const slug = slugify(data.slug || file.replace(/\.md$/, ''), 'post');
+    if (slugs.has(slug)) throw new Error(`Duplicate post slug: ${slug}`);
+    slugs.add(slug);
+
+    const rawTags = Array.isArray(data.tags) ? data.tags : data.tags ? [data.tags] : [];
+    const tagNames = [...new Set(rawTags.map(String).map((tag) => tag.trim()).filter(Boolean))];
+    const { html: rawHtml, headings } = renderMarkdown(body);
+    const html = applyBaseToHtml(rawHtml, base);
+    const plainText = stripHtml(html);
+    const summary = data.summary ? String(data.summary) : truncate(plainText, 150);
+
+    posts.push({
+      type: 'post',
+      slug,
+      file: path.relative(ROOT, filePath),
+      title: String(data.title),
+      date,
+      summary,
+      cover: data.cover ? String(data.cover) : '',
+      featured: data.featured === true,
+      tags: tagNames.map((name) => ({ name, slug: slugify(name, 'tag'), url: `/tags/${encodeURIComponent(slugify(name, 'tag'))}/` })),
+      url: `/posts/${encodeURIComponent(slug)}/`,
+      outputPath: path.join('posts', slug, 'index.html'),
+      html,
+      headings,
+      plainText,
+      readingTime: readingTime(body),
+    });
+  }
+
+  return posts.sort((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title, 'zh-CN'));
+}
+
+function loadPages() {
+  if (!fs.existsSync(PAGES_DIR)) return [];
+  const pages = [];
+  const slugs = new Set();
+  for (const file of fs.readdirSync(PAGES_DIR).filter((name) => name.endsWith('.md')).sort()) {
+    const filePath = path.join(PAGES_DIR, file);
+    const source = fs.readFileSync(filePath, 'utf8');
+    const { data, body } = parseFrontMatter(source, filePath);
+    if (data.draft === true) continue;
+    if (!data.title) throw new Error(`Missing title in ${path.relative(ROOT, filePath)}.`);
+    const slug = slugify(data.slug || file.replace(/\.md$/, ''), 'page');
+    if (slugs.has(slug)) throw new Error(`Duplicate page slug: ${slug}`);
+    slugs.add(slug);
+    const { html: rawHtml } = renderMarkdown(body);
+    const html = applyBaseToHtml(rawHtml, base);
+    pages.push({
+      type: 'page',
+      slug,
+      title: String(data.title),
+      summary: data.summary ? String(data.summary) : '',
+      eyebrow: data.eyebrow ? String(data.eyebrow) : '',
+      html,
+      url: `/${encodeURIComponent(slug)}/`,
+      outputPath: path.join(slug, 'index.html'),
+    });
+  }
+  return pages;
+}
+
+function buildTags(posts) {
+  const map = new Map();
+  for (const post of posts) {
+    for (const tag of post.tags) {
+      if (!map.has(tag.slug)) map.set(tag.slug, { ...tag, posts: [], count: 0 });
+      const entry = map.get(tag.slug);
+      entry.posts.push(post);
+      entry.count += 1;
+    }
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'zh-CN'));
+}
+
+function writeAll(posts, pages, tags) {
+  const latest = posts[0] || null;
+
+  const home = renderHomePage(posts, tags, latest);
+  writeFile(path.join(DIST, 'index.html'), home);
+
+  const postsIndex = renderLayoutFor({
+    title: '文章',
+    description: `所有文章，共 ${posts.length} 篇。`,
+    currentPath: '/posts/',
+    content: templates.renderPostsIndex({ config, base, posts }),
+    canonical: absoluteUrl('/posts/', config),
+  });
+  writeFile(path.join(DIST, 'posts', 'index.html'), postsIndex);
+
+  const archives = renderLayoutFor({
+    title: '归档',
+    description: '按年份排列的全部文章。',
+    currentPath: '/archives/',
+    content: templates.renderArchives({ config, base, posts }),
+    canonical: absoluteUrl('/archives/', config),
+  });
+  writeFile(path.join(DIST, 'archives', 'index.html'), archives);
+
+  const tagIndex = renderLayoutFor({
+    title: '标签',
+    description: '按主题浏览所有文章。',
+    currentPath: '/tags/',
+    content: templates.renderTags({ config, base, tags }),
+    canonical: absoluteUrl('/tags/', config),
+  });
+  writeFile(path.join(DIST, 'tags', 'index.html'), tagIndex);
+
+  const search = renderLayoutFor({
+    title: '搜索',
+    description: '搜索这个博客里的文章。',
+    currentPath: '/search/',
+    content: templates.renderSearchPage({ config, base, posts }),
+    canonical: absoluteUrl('/search/', config),
+    noindex: true,
+  });
+  writeFile(path.join(DIST, 'search', 'index.html'), search);
+
+  for (const post of posts) {
+    const index = posts.indexOf(post);
+    const prev = posts[index + 1] || null;
+    const next = posts[index - 1] || null;
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: post.title,
+      description: post.summary,
+      datePublished: post.date,
+      dateModified: post.date,
+      author: { '@type': 'Person', name: config.author },
+      publisher: { '@type': 'Person', name: config.author },
+      mainEntityOfPage: absoluteUrl(post.url, config),
+      url: absoluteUrl(post.url, config),
+      image: post.cover ? absoluteUrl(post.cover, config) : undefined,
+      keywords: post.tags.map((tag) => tag.name).join(', '),
+      inLanguage: config.lang || 'zh-CN',
+    };
+    const html = renderLayoutFor({
+      title: post.title,
+      description: post.summary,
+      currentPath: post.url,
+      content: templates.renderPost({ config, base, post, prev, next }),
+      canonical: absoluteUrl(post.url, config),
+      ogType: 'article',
+      ogImage: post.cover ? absoluteUrl(post.cover, config) : undefined,
+      bodyClass: 'is-post',
+      jsonLd,
+    });
+    writeFile(path.join(DIST, post.outputPath), html);
+  }
+
+  for (const tag of tags) {
+    const html = renderLayoutFor({
+      title: `标签：${tag.name}`,
+      description: `所有标记为「${tag.name}」的文章。`,
+      currentPath: tag.url,
+      content: templates.renderTag({ config, base, tag, posts: tag.posts }),
+      canonical: absoluteUrl(tag.url, config),
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: `标签：${tag.name}`,
+        url: absoluteUrl(tag.url, config),
+      },
+    });
+    writeFile(path.join(DIST, 'tags', tag.slug, 'index.html'), html);
+  }
+
+  for (const page of pages) {
+    const html = renderLayoutFor({
+      title: page.title,
+      description: page.summary || config.description,
+      currentPath: page.url,
+      content: templates.renderPage({ config, base, page }),
+      canonical: absoluteUrl(page.url, config),
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'AboutPage',
+        name: page.title,
+        url: absoluteUrl(page.url, config),
+        description: page.summary || config.description,
+      },
+    });
+    writeFile(path.join(DIST, page.outputPath), html);
+  }
+}
+
+function renderHomePage(posts, tags, latest) {
+  return templates.renderLayout({
+    config,
+    base,
+    title: '',
+    description: config.description,
+    content: templates.renderHome({ config, base, posts, tags, latest }),
+    currentPath: '/',
+    canonical: absoluteUrl('/', config),
+    isHome: true,
+    bodyClass: 'template-home',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: config.title,
+      url: absoluteUrl('/', config),
+      description: config.description,
+      inLanguage: config.lang || 'zh-CN',
+      author: { '@type': 'Person', name: config.author },
+    },
+  });
+}
+
+function renderLayoutFor(options) {
+  return templates.renderLayout({ config, base, ...options });
+}
+
+function writeFeeds(posts, tags) {
+  const siteTitle = config.title;
+  const self = absoluteUrl('/feed.xml', config);
+  const items = posts
+    .map((post) => {
+      const url = absoluteUrl(post.url, config);
+      const pubDate = new Date(`${post.date}T08:00:00+08:00`).toUTCString();
+      const content = post.html.replace(/(href|src)="\/(?!\/)/g, `$1="${siteUrl}/`);
+      return `    <item>
+      <title>${xmlEscape(post.title)}</title>
+      <link>${xmlEscape(url)}</link>
+      <guid isPermaLink="true">${xmlEscape(url)}</guid>
+      <pubDate>${pubDate}</pubDate>
+      <dc:creator>${xmlEscape(config.author)}</dc:creator>
+      ${post.tags.map((tag) => `<category>${xmlEscape(tag.name)}</category>`).join('')}
+      <description>${xmlEscape(post.summary)}</description>
+      <content:encoded><![CDATA[${content.replace(/]]>/g, ']]]]><![CDATA[>')}]]></content:encoded>
+    </item>`;
+    })
+    .join('\n');
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>${xmlEscape(siteTitle)}</title>
+    <link>${xmlEscape(absoluteUrl('/', config))}</link>
+    <description>${xmlEscape(config.description)}</description>
+    <language>${xmlEscape(config.lang || 'zh-CN')}</language>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+    <atom:link href="${xmlEscape(self)}" rel="self" type="application/rss+xml"/>
+    ${items}
+  </channel>
+</rss>
+`;
+  writeFile(path.join(DIST, 'feed.xml'), xml);
+}
+
+function writeSearchIndex(posts) {
+  const index = posts.map((post) => ({
+    title: post.title,
+    url: withBase(post.url, base),
+    date: post.date,
+    dateLabel: formatDate(post.date, 'short'),
+    tags: post.tags.map((tag) => tag.name),
+    summary: post.summary,
+    content: truncate(post.plainText, 5000),
+  }));
+  writeFile(path.join(DIST, 'search-index.json'), JSON.stringify(index));
+}
+
+function writeSitemap(posts, pages, tags) {
+  const urls = [
+    { loc: absoluteUrl('/', config), lastmod: posts[0]?.date || buildDay, priority: '1.0' },
+    { loc: absoluteUrl('/posts/', config), lastmod: posts[0]?.date || buildDay, priority: '0.9' },
+    { loc: absoluteUrl('/archives/', config), lastmod: posts[0]?.date || buildDay, priority: '0.7' },
+    { loc: absoluteUrl('/tags/', config), lastmod: posts[0]?.date || buildDay, priority: '0.6' },
+    ...posts.map((post) => ({ loc: absoluteUrl(post.url, config), lastmod: post.date, priority: '0.8' })),
+    ...tags.map((tag) => ({ loc: absoluteUrl(tag.url, config), lastmod: tag.posts[0]?.date || buildDay, priority: '0.5' })),
+    ...pages.map((page) => ({ loc: absoluteUrl(page.url, config), lastmod: buildDay, priority: '0.6' })),
+  ];
+  const body = urls
+    .map(
+      (url) => `  <url>
+    <loc>${xmlEscape(url.loc)}</loc>
+    <lastmod>${url.lastmod}</lastmod>
+    <changefreq>${url.priority === '1.0' ? 'weekly' : 'monthly'}</changefreq>
+    <priority>${url.priority}</priority>
+  </url>`,
+    )
+    .join('\n');
+  writeFile(
+    path.join(DIST, 'sitemap.xml'),
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`,
+  );
+}
+
+function writeRobots() {
+  const sitemap = absoluteUrl('/sitemap.xml', config);
+  writeFile(
+    path.join(DIST, 'robots.txt'),
+    `User-agent: *\nAllow: /\n\nSitemap: ${sitemap}\n`,
+  );
+}
+
+function write404(posts) {
+  const html = renderLayoutFor({
+    title: '页面走丢了',
+    description: '404 — 页面不存在。',
+    currentPath: '/404.html',
+    content: templates.render404({ config, base }),
+    canonical: absoluteUrl('/404.html', config),
+    noindex: true,
+  });
+  writeFile(path.join(DIST, '404.html'), html);
+}

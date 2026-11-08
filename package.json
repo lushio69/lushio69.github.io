@@ -1,0 +1,17 @@
+{
+  "name": "lushio-blog",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A quiet personal blog, built with plain Node.js for GitHub Pages.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "dev": "node scripts/dev.mjs",
+    "new": "node scripts/new-post.mjs",
+    "publish": "powershell -NoProfile -ExecutionPolicy Bypass -File ./publish.ps1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="一张缓慢加载的网页线稿">
+  <defs>
+    <filter id="grain2">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.055"/></feComponentTransfer>
+    </filter>
+    <linearGradient id="paper2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbf6eb"/>
+      <stop offset="1" stop-color="#eee6d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="#dfe2d2"/>
+  <g stroke="#6d745c" stroke-width="1" opacity="0.24">
+    <path d="M0 100h1200M0 200h1200M0 300h1200M0 400h1200M0 500h1200M0 600h1200M0 700h1200"/>
+    <path d="M100 0v800M200 0v800M300 0v800M400 0v800M500 0v800M600 0v800M700 0v800M800 0v800M900 0v800M1000 0v800M1100 0v800"/>
+  </g>
+  <path d="M1000 84c-90 54-148 131-174 230-24 92-5 179 57 261" fill="none" stroke="#b4452c" stroke-width="2" opacity="0.75"/>
+  <g transform="translate(172 174) rotate(-2 400 260)">
+    <rect width="856" height="520" rx="10" fill="url(#paper2)" stroke="#8a826f" stroke-opacity="0.42"/>
+    <path d="M0 58h856" stroke="#8a826f" stroke-opacity="0.4"/>
+    <circle cx="30" cy="29" r="5" fill="#b4452c" opacity="0.85"/>
+    <circle cx="50" cy="29" r="5" fill="#c9bca8"/>
+    <circle cx="70" cy="29" r="5" fill="#c9bca8"/>
+    <rect x="94" y="20" width="246" height="18" rx="9" fill="#e5dac8"/>
+    <path d="M0 98h250" stroke="#b4452c" stroke-opacity="0.55" stroke-width="2"/>
+    <text x="48" y="92" font-family="Georgia, serif" font-size="16" fill="#6d745c" letter-spacing="3">A SLOW WEB</text>
+    <rect x="48" y="136" width="527" height="22" rx="3" fill="#2f2c25" opacity="0.82"/>
+    <rect x="48" y="175" width="420" height="22" rx="3" fill="#2f2c25" opacity="0.82"/>
+    <rect x="48" y="234" width="505" height="10" rx="5" fill="#9b9282" opacity="0.52"/>
+    <rect x="48" y="257" width="470" height="10" rx="5" fill="#9b9282" opacity="0.42"/>
+    <rect x="48" y="280" width="523" height="10" rx="5" fill="#9b9282" opacity="0.36"/>
+    <rect x="48" y="326" width="152" height="92" rx="2" fill="#d9cbb7"/>
+    <path d="M48 418l45-48 36 32 32-24 39 40z" fill="#6d745c" opacity="0.65"/>
+    <rect x="227" y="326" width="152" height="92" rx="2" fill="#e5dac8"/>
+    <path d="M227 418l43-30 33 21 35-39 41 48z" fill="#b4452c" opacity="0.48"/>
+    <rect x="406" y="326" width="165" height="92" rx="2" fill="#cfd3c0"/>
+    <circle cx="489" cy="370" r="31" fill="none" stroke="#6d745c" stroke-opacity="0.65"/>
+    <path d="M48 458h523" stroke="#8a826f" stroke-opacity="0.35"/>
+    <rect x="48" y="478" width="89" height="8" rx="4" fill="#9b9282" opacity="0.42"/>
+    <rect x="664" y="122" width="146" height="1" fill="#8a826f" opacity="0.3"/>
+    <circle cx="696" cy="167" r="16" fill="#b4452c" opacity="0.85"/>
+    <rect x="728" y="154" width="118" height="9" rx="4" fill="#9b9282" opacity="0.5"/>
+    <rect x="728" y="173" width="82" height="8" rx="4" fill="#9b9282" opacity="0.32"/>
+    <path d="M664 230h192M664 282h192M664 334h192M664 386h192" stroke="#8a826f" stroke-opacity="0.24"/>
+    <rect x="664" y="246" width="132" height="8" rx="4" fill="#9b9282" opacity="0.34"/>
+    <rect x="664" y="298" width="158" height="8" rx="4" fill="#9b9282" opacity="0.34"/>
+    <rect x="664" y="350" width="112" height="8" rx="4" fill="#9b9282" opacity="0.34"/>
+    <rect x="664" y="402" width="168" height="8" rx="4" fill="#9b9282" opacity="0.34"/>
+    <rect x="664" y="458" width="192" height="1" fill="#8a826f" opacity="0.3"/>
+    <text x="664" y="480" font-family="Consolas, monospace" font-size="10" fill="#8a826f" letter-spacing="1.6">WAIT FOR IT</text>
+  </g>
+  <g fill="#b4452c">
+    <circle cx="110" cy="660" r="4"/>
+    <circle cx="130" cy="660" r="4" opacity="0.55"/>
+    <circle cx="150" cy="660" r="4" opacity="0.3"/>
+  </g>
+  <rect width="1200" height="800" filter="url(#grain2)" opacity="0.9"/>
+  <rect x="28" y="28" width="1144" height="744" fill="none" stroke="#211f1b" stroke-opacity="0.13"/>
+</svg>

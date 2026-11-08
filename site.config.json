@@ -1,0 +1,60 @@
+{
+  "title": "Lushio",
+  "wordmark": "Lushio",
+  "description": "代码、文字与生活的安静角落。",
+  "author": "Lushio",
+  "lang": "zh-CN",
+  "locale": "zh_CN",
+  "url": "https://lushio69.github.io",
+  "basePath": "/",
+  "startYear": 2024,
+  "tagline": "在代码与文字之间，记录缓慢发生的事。",
+  "bio": "一个写代码的人，偶尔也写一点不着急的文字。这里存放读过的书、做过的项目，以及那些值得多想一会儿的瞬间。",
+  "hero": {
+    "eyebrow": "笔记 · 代码 · 生活",
+    "title": "把漫长的时间，",
+    "titleAccent": "写成可以重读的句子。",
+    "intro": "这是一个不追逐更新频率的个人博客。写技术，也写技术之外的事；把值得记住的东西留在这里，等未来的自己回来翻阅。"
+  },
+  "now": {
+    "title": "此刻",
+    "items": [
+      {
+        "label": "在做",
+        "value": "一个很小、但很喜欢的个人项目"
+      },
+      {
+        "label": "在读",
+        "value": "《禅与摩托车维修艺术》"
+      },
+      {
+        "label": "在听",
+        "value": "坂本龙一，以及雨声"
+      }
+    ]
+  },
+  "social": [
+    {
+      "label": "GitHub",
+      "url": "https://github.com/lushio69"
+    }
+  ],
+  "nav": [
+    {
+      "label": "文章",
+      "url": "/posts/"
+    },
+    {
+      "label": "归档",
+      "url": "/archives/"
+    },
+    {
+      "label": "标签",
+      "url": "/tags/"
+    },
+    {
+      "label": "关于",
+      "url": "/about/"
+    }
+  ]
+}

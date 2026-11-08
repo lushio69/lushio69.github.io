@@ -107,6 +107,7 @@ for (const required of [
   'search-index.json',
   '404.html',
   'categories/index.html',
+  'series/index.html',
   'assets/katex.min.css',
   'assets/fonts/KaTeX_Main-Regular.woff2',
   '.nojekyll',

@@ -200,7 +200,49 @@ export function renderLayout({
 </html>`;
 }
 
-export function renderHome({ config, base, posts, tags, categories, latest, heroFormula }) {
+function renderCategoryBoard(categories, base, limit = 3) {
+  return `<div class="category-board">${categories
+    .map(
+      (category, index) => `<section class="category-column">
+        <a class="category-column-head" href="${withBase(category.url, base)}">
+          <span class="category-column-index">${String(index + 1).padStart(2, '0')}</span>
+          <span class="category-column-name">${escapeHtml(category.name)}</span>
+          <span class="category-column-count">${category.count} 篇</span>
+        </a>
+        <div class="category-column-list">
+          ${category.posts
+            .slice(0, limit)
+            .map(
+              (post) => `<a class="category-post" href="${withBase(post.url, base)}">
+                <time datetime="${post.date}">${formatDate(post.date, 'short')}</time>
+                <strong>${escapeHtml(post.title)}</strong>
+                <p>${escapeHtml(truncate(post.summary, 120))}</p>
+              </a>`,
+            )
+            .join('') || '<p class="category-empty">这个分类还在等第一篇文章。</p>'}
+        </div>
+        <a class="category-column-more" href="${withBase(category.url, base)}">查看全部 <span aria-hidden="true">→</span></a>
+      </section>`,
+    )
+    .join('')}</div>`;
+}
+
+function renderSeriesCard(item, base) {
+  const target = item.target || item.count || 1;
+  const percent = Math.min(100, Math.round((item.count / target) * 100));
+  return `<a class="series-card" href="${withBase(item.url, base)}">
+    <div class="series-card-media">${item.cover ? `<img src="${escapeAttr(withBase(item.cover, base))}" alt="" loading="lazy" decoding="async">` : ''}</div>
+    <div class="series-card-body">
+      <div class="series-card-meta"><span>专栏</span><span>${escapeHtml(item.status)}</span></div>
+      <h3>${escapeHtml(item.title)}</h3>
+      <p>${escapeHtml(truncate(item.description, 110))}</p>
+      <div class="series-progress"><span style="width:${percent}%"></span></div>
+      <div class="series-card-foot"><span>${item.count} 篇${item.target ? ` / ${item.target} 天` : ''}</span><span>${item.latest ? `最近 ${escapeHtml(item.latest.series?.label || '')}` : '准备中'}</span></div>
+    </div>
+  </a>`;
+}
+
+export function renderHome({ config, base, posts, series, tags, categories, latest, heroFormula }) {
   const gridPosts = posts.filter((post) => post.slug !== latest?.slug).slice(0, 6);
   const feature = latest
     ? `<a class="hero-feature" href="${withBase(latest.url, base)}" aria-label="阅读最新文章：${escapeAttr(latest.title)}">
@@ -219,18 +261,7 @@ export function renderHome({ config, base, posts, tags, categories, latest, hero
 
   const cards = gridPosts.map((post, index) => renderPostCard(post, base, index + 1)).join('');
 
-  const categoryCards = categories
-    .map(
-      (category, index) => `<a class="category-card" href="${withBase(category.url, base)}">
-        <span class="category-index">${String(index + 1).padStart(2, '0')}</span>
-        <span class="category-card-body">
-          <strong>${escapeHtml(category.name)}</strong>
-          <small>${category.count} 篇文章</small>
-        </span>
-        <span class="category-card-arrow" aria-hidden="true">${ICONS.arrowUpRight}</span>
-      </a>`,
-    )
-    .join('');
+  const categoryBoard = renderCategoryBoard(categories, base);
 
   const tagCloud = tags
     .slice(0, 12)
@@ -259,6 +290,7 @@ export function renderHome({ config, base, posts, tags, categories, latest, hero
         ${heroFormula ? `<div class="hero-formula"><span class="formula-label">a quiet identity</span>${heroFormula}</div>` : ''}
         <div class="hero-foot">
           <span>${posts.length} 篇文章</span>
+          <span>${series.length} 个专栏</span>
           <span>${categories.length} 个分类</span>
           <span>${tags.length} 个标签</span>
         </div>
@@ -290,13 +322,24 @@ export function renderHome({ config, base, posts, tags, categories, latest, hero
         </div>
         <a class="section-more" href="${withBase('/categories/', base)}">全部分类 <span aria-hidden="true">→</span></a>
       </div>
-      <div class="category-grid">${categoryCards || '<p class="empty-state">还没有分类。</p>'}</div>
+      ${categoryBoard || '<p class="empty-state">还没有分类。</p>'}
+    </section>
+
+    <section class="section container">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">03 / Series</p>
+          <h2>长期更新的专栏</h2>
+        </div>
+        <a class="section-more" href="${withBase('/series/', base)}">全部专栏 <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="series-grid">${series.map((item) => renderSeriesCard(item, base)).join('') || '<p class="empty-state">专栏正在筹备中。</p>'}</div>
     </section>
 
     <section class="section container">
       <div class="tag-panel">
         <div class="tag-panel-copy">
-          <p class="section-kicker">03 / Tags</p>
+          <p class="section-kicker">04 / Tags</p>
           <h2>标签索引</h2>
           <p>分类是固定的书架；标签是可以同时出现在很多书架上的关键词。</p>
           <a class="text-link" href="${withBase('/tags/', base)}">查看全部标签 ${ICONS.arrow}</a>
@@ -414,19 +457,38 @@ export function renderPost({ config, base, post, prev, next }) {
       </nav>`
     : '';
 
+  const taxonomy = `<div class="post-taxonomy">
+    <div class="post-tax-row">
+      <span class="post-tax-label">分类：</span>
+      <a class="post-tax-link" href="${withBase(post.category.url, base)}">${escapeHtml(post.category.name)}</a>
+    </div>
+    <div class="post-tax-row">
+      <span class="post-tax-label">标签：</span>
+      ${post.tags.length ? post.tags.map((tag) => `<a class="post-tax-link" href="${withBase(tag.url, base)}">${escapeHtml(tag.name)}</a>`).join(' ') : '<span class="post-tax-empty">暂无</span>'}
+    </div>
+    ${
+      post.series
+        ? `<div class="post-tax-row post-tax-series">
+            <span class="post-tax-label">本文收录于</span>
+            <a class="post-tax-link" href="${withBase(post.series.url, base)}">《${escapeHtml(post.series.title)}》</a>
+            <span class="post-tax-extra">${escapeHtml(post.series.label)}</span>
+          </div>`
+        : ''
+    }
+  </div>`;
+
   return `  <article class="post container template-post">
       <header class="post-header">
         <a class="back-link" href="${withBase('/posts/', base)}">← 所有文章</a>
         <div class="post-heading">
           <div class="post-meta">
-            <a class="post-category" href="${withBase(post.category.url, base)}">${escapeHtml(post.category.name)}</a>
-            <span class="dot" aria-hidden="true">·</span>
             <time datetime="${post.date}">${formatDate(post.date)}</time>
             <span class="dot" aria-hidden="true">·</span>
             <span>${post.readingTime} 分钟阅读</span>
           </div>
           <h1>${escapeHtml(post.title)}</h1>
           ${post.summary ? `<p class="post-dek">${escapeHtml(post.summary)}</p>` : ''}
+          ${taxonomy}
         </div>
       </header>
 
@@ -485,27 +547,74 @@ export function renderTag({ config, base, tag, posts }) {
     </section>`;
 }
 
-export function renderCategories({ config, base, categories }) {
-  const cards = categories
+export function renderSeriesIndex({ config, base, series }) {
+  return `  <section class="page-hero container">
+      <p class="eyebrow">Series · ${series.length}</p>
+      <h1>长期更新的<em>文章集。</em></h1>
+      <p class="page-intro">专栏不是零散的文章，而是一条会持续很久的路径。可以按顺序从头读，也可以在需要时回来查某一篇。</p>
+    </section>
+    <section class="container section section-tight">
+      <div class="series-grid series-grid-page">${series.map((item) => renderSeriesCard(item, base)).join('') || '<p class="empty-state">专栏正在筹备中。</p>'}</div>
+    </section>`;
+}
+
+export function renderSeries({ config, base, series }) {
+  const target = series.target || series.count || 1;
+  const percent = Math.min(100, Math.round((series.count / target) * 100));
+  const parts = series.posts
     .map(
-      (category, index) => `<a class="category-card category-card-large" href="${withBase(category.url, base)}">
-        <span class="category-index">${String(index + 1).padStart(2, '0')}</span>
-        <span class="category-card-body">
-          <strong>${escapeHtml(category.name)}</strong>
-          <small>${category.count} 篇文章 · 最近 ${formatDate(category.posts[0].date, 'short')}</small>
+      (post) => `<a class="series-part" href="${withBase(post.url, base)}">
+        <span class="series-part-label">${escapeHtml(post.series.label || '')}</span>
+        <span class="series-part-body">
+          <strong>${escapeHtml(post.title)}</strong>
+          <p>${escapeHtml(truncate(post.summary, 120))}</p>
         </span>
-        <span class="category-card-arrow" aria-hidden="true">${ICONS.arrowUpRight}</span>
+        <time datetime="${post.date}">${formatDate(post.date, 'short')}</time>
+        <span class="series-part-arrow" aria-hidden="true">↗</span>
       </a>`,
     )
     .join('');
 
+  return `  <section class="series-hero container">
+      <div class="series-hero-cover">${series.cover ? `<img src="${escapeAttr(withBase(series.cover, base))}" alt="" loading="eager" decoding="async">` : ''}</div>
+      <div class="series-hero-copy">
+        <a class="back-link" href="${withBase('/series/', base)}">← 所有专栏</a>
+        <p class="eyebrow">Series · ${escapeHtml(series.status)}</p>
+        <h1>${escapeHtml(series.title)}</h1>
+        <p class="page-intro">${escapeHtml(series.description)}</p>
+        <div class="series-hero-stats">
+          <span><strong>${series.count}</strong> 篇已更新</span>
+          ${series.target ? `<span><strong>${series.target}</strong> 天计划</span>` : ''}
+          <span>${percent}% 完成</span>
+        </div>
+        <div class="series-progress series-progress-large"><span style="width:${percent}%"></span></div>
+      </div>
+    </section>
+    <section class="container section series-parts-section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">01 / Contents</p>
+          <h2>篇目</h2>
+        </div>
+        <span class="section-more">${series.latest ? `最近更新 ${escapeHtml(series.latest.series?.label || '')}` : '等待第一篇'}</span>
+      </div>
+      <div class="series-parts">${parts || '<p class="empty-state">这个专栏还在准备中。</p>'}</div>
+    </section>
+    ${
+      series.html.trim()
+        ? `<section class="container series-about"><div class="prose">${series.html}</div></section>`
+        : ''
+    }`;
+}
+
+export function renderCategories({ config, base, categories }) {
   return `  <section class="page-hero container">
       <p class="eyebrow">Categories · ${categories.length}</p>
       <h1>固定的<em>书架。</em></h1>
-      <p class="page-intro">分类是稳定的书架：每篇文章只归入一个分类。标签则是可以同时贴在很多书架上的关键词——两者各管一件事，不必混在一起。</p>
+      <p class="page-intro">分类是稳定的书架：每篇文章只归入一个分类。每一栏下面是这个分类最近更新的三篇文章；标签则是可以同时贴在很多书架上的关键词。</p>
     </section>
     <section class="container section section-tight">
-      <div class="category-grid category-grid-page">${cards || '<p class="empty-state">还没有分类。</p>'}</div>
+      ${renderCategoryBoard(categories, base) || '<p class="empty-state">还没有分类。</p>'}
       <div class="category-note">
         <p><strong>分类</strong> 用来回答「这篇文章属于哪个领域」；<strong>标签</strong> 用来回答「它还和什么有关」。</p>
         <a class="text-link" href="${withBase('/tags/', base)}">去看标签索引 ${ICONS.arrow}</a>

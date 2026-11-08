@@ -210,6 +210,7 @@
       .map((doc) => {
         const title = doc.title.toLowerCase();
         const category = (doc.category || '').toLowerCase();
+        const series = (doc.series || '').toLowerCase();
         const tags = (doc.tags || []).join(' ').toLowerCase();
         const summary = (doc.summary || '').toLowerCase();
         const content = (doc.content || '').toLowerCase();
@@ -217,12 +218,14 @@
         for (const token of tokens) {
           const inTitle = title.includes(token);
           const inCategory = category.includes(token);
+          const inSeries = series.includes(token);
           const inTags = tags.includes(token);
           const inSummary = summary.includes(token);
           const inContent = content.includes(token);
-          if (!inTitle && !inCategory && !inTags && !inSummary && !inContent) return null;
+          if (!inTitle && !inCategory && !inSeries && !inTags && !inSummary && !inContent) return null;
           if (inTitle) score += 80;
           if (inCategory) score += 26;
+          if (inSeries) score += 24;
           if (inTags) score += 32;
           if (inSummary) score += 18;
           if (inContent) score += 4;
@@ -239,7 +242,7 @@
   function resultMarkup(doc, tokens, index) {
     return `<a class="search-result" href="${escapeHtml(doc.url)}" data-index="${index}">
       <h3>${highlight(doc.title, tokens)}</h3>
-      <div class="search-result-meta"><span>${escapeHtml(doc.category || '未分类')}</span><span>${escapeHtml(doc.dateLabel || doc.date)}</span>${(doc.tags || []).map((tag) => `<span>#${escapeHtml(tag)}</span>`).join('')}</div>
+      <div class="search-result-meta"><span>${escapeHtml(doc.category || '未分类')}</span>${doc.series ? `<span>专栏 · ${escapeHtml(doc.series)}</span>` : ''}<span>${escapeHtml(doc.dateLabel || doc.date)}</span>${(doc.tags || []).map((tag) => `<span>#${escapeHtml(tag)}</span>`).join('')}</div>
       <p>${highlight(snippet(doc, tokens), tokens)}</p>
     </a>`;
   }

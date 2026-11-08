@@ -1,17 +1,20 @@
-# Lushio · 数学博客
+# Lushio · 数学、物理与计算机科学博客
 
-一个安静、克制、零前端框架的数学博客。纯 Node.js 静态生成，公式在构建时用 KaTeX 排好，托管在 GitHub Pages，本地双击即可发布。
+一个安静、克制、零前端框架的跨学科博客。纯 Node.js 静态生成，公式在构建时用 KaTeX 排好，托管在 GitHub Pages，本地双击即可发布。
 
-![Lushio 数学博客预览](docs/preview.webp)
+![Lushio 博客预览](docs/preview.webp)
 
 ## 特点
 
 - **数学公式**：行内 `$...$`、独立 `$$...$$`，构建时用 KaTeX 渲染成 HTML，不依赖 CDN 或浏览器脚本。
-- **分类与标签分离**：每篇文章属于一个固定分类；标签可以跨分类自由组合。
+- **跨学科分类**：数学分析、线性代数、概率论、物理学、计算机科学和随笔。
+- **分类栏**：每个分类下面直接列出最近更新的三篇文章和摘要。
+- **专栏**：支持长期连载的文章集，例如《100 天学会微积分》。
+- **文章信息**：文章页突出显示分类、标签和所属专栏，全部可点击。
 - **评论区**：通过 Utterances 接入 GitHub Issues，自动跟随明暗主题。
 - **零构建依赖**：KaTeX 已随仓库内置，不需要 `npm install`。
 - **一键发布**：双击 `publish.cmd`，自动构建、检查、提交、同步远程并推送。
-- **完整博客功能**：文章、分类、标签、归档、关于、搜索、站点地图、404。
+- **完整博客功能**：文章、专栏、分类、标签、归档、关于、搜索、站点地图、404。
 - **阅读体验**：响应式布局、明暗主题、文章目录、阅读进度、代码复制。
 
 ## 快速开始
@@ -95,12 +98,15 @@ npm run new -- "文章标题"
 
 ```markdown
 ---
-title: "ε-δ 到底在说什么"
-date: 2026-10-26
+title: "DAY 01：变化率不是除法"
+date: 2026-06-01
 category: 数学分析
-tags: [极限, 证明, 直觉]
+tags: [微积分, 导数, 直觉]
+series: 100-days-calculus
+seriesOrder: 1
+seriesLabel: DAY 01
 summary: "一句话摘要，会用在首页和 SEO。"
-cover: /assets/covers/epsilon-delta.svg
+cover: /assets/covers/calculus-day01.svg
 ---
 
 正文从这里开始。
@@ -110,21 +116,65 @@ cover: /assets/covers/epsilon-delta.svg
 | --- | --- | --- |
 | `title` | 是 | 文章标题 |
 | `date` | 是 | `YYYY-MM-DD` |
-| `category` | 建议 | 一个分类名，例如 `数学分析`；不填会归入「未分类」 |
+| `category` | 建议 | 一个分类名，例如 `数学分析`、`物理学`、`计算机科学`；不填会归入「未分类」 |
 | `tags` | 否 | 多个关键词，例如 `[极限, 证明]` |
+| `series` | 否 | 所属专栏的 slug，例如 `100-days-calculus` |
+| `seriesOrder` | 否 | 在专栏里的顺序，数字越小越靠前 |
+| `seriesLabel` | 否 | 专栏里的篇目标签，例如 `DAY 01` |
 | `summary` | 否 | 首页摘要、SEO 描述；不填自动截取正文 |
 | `cover` | 否 | 封面图路径 |
 | `draft` | 否 | `true` 时不参与构建 |
 | `featured` | 否 | 预留的精选标记 |
 
-文件名会成为 URL，例如 `content/posts/epsilon-delta.md` → `/posts/epsilon-delta/`。
+文件名会成为 URL，例如 `content/posts/calculus-day01.md` → `/posts/calculus-day01/`。
 
 ### 分类和标签的区别
 
 - **分类**：每篇文章只属于一个分类，像书架上的固定分区。用于回答“这篇文章属于哪个领域”。
 - **标签**：一篇文章可以有多个标签，可以跨分类重复出现。用于回答“它还和什么有关”。
 
-分类页面在 `/categories/`，标签页面在 `/tags/`。首页也会分别展示两者。分类的展示顺序可以在 `site.config.json` 的 `categoryOrder` 中调整。
+分类页面在 `/categories/`，标签页面在 `/tags/`。首页会把每个分类最近的三篇文章和摘要直接铺开。分类的展示顺序可以在 `site.config.json` 的 `categoryOrder` 中调整。
+
+## 专栏
+
+专栏用来放那些会长期更新、有顺序的文章集。它和分类、标签是三个独立维度：
+
+- 分类回答“属于哪个领域”；
+- 标签回答“和什么有关”；
+- 专栏回答“这篇文章属于哪条持续更新的路径”。
+
+### 新建一个专栏
+
+在 `content/series/` 新建 Markdown 文件，例如 `100-days-calculus.md`：
+
+```markdown
+---
+title: "100 天学会微积分"
+description: "从变化率开始，把微积分重新讲一遍。"
+status: "连载中"
+target: 100
+order: 1
+cover: /assets/covers/series-calculus.svg
+---
+
+这个专栏的长期说明。
+```
+
+然后在文章 front matter 里引用它的 slug：
+
+```markdown
+series: 100-days-calculus
+seriesOrder: 1
+seriesLabel: DAY 01
+```
+
+构建时会自动：
+
+- 生成 `/series/` 列表页；
+- 生成 `/series/100-days-calculus/` 详情页；
+- 按 `seriesOrder` 排列篇目；
+- 在文章页显示“本文收录于《100 天学会微积分》”，并链接回专栏；
+- 在首页展示专栏进度。
 
 ## 数学公式
 
@@ -233,11 +283,11 @@ GitHub Pages 是纯静态托管，本身不能运行评论后端。这个项目�
 {
   "title": "Lushio",
   "mark": "∑",
-  "description": "一个关于数学分析、线性代数与概率的安静博客。",
+  "description": "一个关于数学、物理与计算机科学的安静博客。",
   "author": "Lushio",
   "url": "https://lushio69.github.io",
   "basePath": "/",
-  "tagline": "在定义与直觉之间，写下推理的痕迹。"
+  "tagline": "在公式、定律与代码之间，写下理解的过程。"
 }
 ```
 
@@ -292,8 +342,10 @@ GitHub Pages 是纯静态托管，本身不能运行评论后端。这个项目�
 ```text
 .
 ├─ content/
-│  ├─ posts/              # 文章 Markdown（带 category / tags）
+│  ├─ posts/              # 文章 Markdown（带 category / tags / series）
+│  ├─ series/             # 专栏元数据和长期说明
 │  └─ pages/              # 独立页面（关于）
+├─ archive/v1-math-blog/  # 早期纯数学版本的文字与样式快照
 ├─ src/assets/            # 样式、交互、封面图、图标
 ├─ vendor/katex/          # 内置 KaTeX（含字体和许可证）
 ├─ scripts/
@@ -331,6 +383,14 @@ GitHub Pages 是纯静态托管，本身不能运行评论后端。这个项目�
 
 检查文章 front matter 里的 `category` 是否拼写一致。一个分类名对应一个页面，拼写不同会被视为两个分类。
 
+**专栏里的文章顺序不对**
+
+检查每篇文章的 `seriesOrder`。构建会先按它排序，再按日期排序；没有 `seriesOrder` 的文章会排在后面。
+
+**分类栏只显示了三篇**
+
+首页和分类总览页默认只展示每个分类最近的三篇，完整列表在分类自己的页面里。这个数量在模板 `renderCategoryBoard` 中调整。
+
 **推送失败 / 403**
 
 在终端运行 `git push -u origin main` 查看详细错误，重新登录 GitHub 或检查网络。
@@ -342,11 +402,13 @@ npm run build
 npm run check
 ```
 
-当前构建会生成 4 个分类、10 个标签和 26 个页面，并检查全部内部链接。
+当前构建会生成 6 个分类、19 个标签、1 个专栏和 43 个页面，并检查全部内部链接。
 
 ## 一点说明
 
-`content/` 里的四篇文章是示例内容，发布前请替换成你自己的文章。KaTeX 的许可证在 `vendor/katex/LICENSE`。
+`content/` 里的八篇文章是示例内容，发布前请替换成你自己的文章。KaTeX 的许可证在 `vendor/katex/LICENSE`。
+
+早期的纯数学版本保存在 Git 标签 `v1-math-blog` 和 `archive/v1-math-blog/` 中，包括当时的文字、样式和首页截图。
 
 这个博客没有统计脚本、没有第三方字体、没有 CDN。公式在构建时就已经排好，评论交给 GitHub。
 

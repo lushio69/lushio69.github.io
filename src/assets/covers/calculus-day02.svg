@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="割线逼近切线">
+  <defs>
+    <pattern id="grid-d2" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#0e6b54" stroke-opacity="0.08" stroke-width="1"/>
+    </pattern>
+    <filter id="grain-d2">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.04"/></feComponentTransfer>
+    </filter>
+  </defs>
+  <rect width="1200" height="800" fill="#edf2eb"/>
+  <rect width="1200" height="800" fill="url(#grid-d2)"/>
+  <line x1="160" y1="620" x2="1030" y2="620" stroke="#17211c" stroke-width="1.5"/>
+  <line x1="220" y1="150" x2="220" y2="650" stroke="#17211c" stroke-width="1.5"/>
+  <path d="M270 580C380 555 480 480 590 380c100-90 190-128 330-100" fill="none" stroke="#0e6b54" stroke-width="4"/>
+  <circle cx="590" cy="380" r="8" fill="#b1783a"/>
+  <line x1="350" y1="560" x2="842" y2="172" stroke="#b1783a" stroke-width="1.6" stroke-dasharray="7 7"/>
+  <line x1="480" y1="502" x2="840" y2="222" stroke="#b1783a" stroke-width="1.2" stroke-dasharray="4 8" opacity="0.6"/>
+  <line x1="590" y1="380" x2="938" y2="146" stroke="#0e6b54" stroke-width="2"/>
+  <text x="606" y="366" font-family="Georgia, serif" font-size="18" fill="#b1783a">P</text>
+  <text x="860" y="212" font-family="Georgia, serif" font-size="18" fill="#0e6b54">tangent</text>
+  <text x="790" y="466" font-family="Consolas, monospace" font-size="11" fill="#65716a" letter-spacing="1">secants → tangent</text>
+  <g transform="translate(150 142)">
+    <text x="0" y="0" font-family="Consolas, monospace" font-size="12" fill="#65716a" letter-spacing="2">DAY 02 / SECANT TO TANGENT</text>
+    <text x="0" y="56" font-family="Georgia, serif" font-size="35" fill="#17211c">f′(a) = lim h→0</text>
+  </g>
+  <text x="348" y="756" font-family="Georgia, serif" font-size="22" fill="#65716a">the slope that survives the limit</text>
+  <rect width="1200" height="800" filter="url(#grain-d2)" opacity="0.9"/>
+  <rect x="28" y="28" width="1144" height="744" fill="none" stroke="#17211c" stroke-opacity="0.12"/>
+</svg>

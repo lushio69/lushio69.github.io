@@ -714,6 +714,87 @@ export function renderPage({ config, base, page }) {
     </article>`;
 }
 
+export function renderLinks({ config, base }) {
+  const friends = Array.isArray(config.friends) ? config.friends : [];
+  const hostname = (url) => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+      return url;
+    }
+  };
+
+  const cards = friends
+    .map((friend) => {
+      const initial = [...String(friend.name || '?')][0] || '·';
+      return `<a class="friend-card" href="${escapeAttr(friend.url)}" target="_blank" rel="noopener noreferrer">
+        <span class="friend-avatar">${friend.avatar ? `<img src="${escapeAttr(withBase(friend.avatar, base))}" alt="" loading="lazy" decoding="async">` : escapeHtml(initial)}</span>
+        <span class="friend-body">
+          <strong>${escapeHtml(friend.name)}</strong>
+          <span class="friend-host">${escapeHtml(hostname(friend.url))}</span>
+          <p>${escapeHtml(friend.description || '一个值得去看看的地方。')}</p>
+        </span>
+        <span class="friend-arrow" aria-hidden="true">${ICONS.arrowUpRight}</span>
+      </a>`;
+    })
+    .join('');
+
+  const applyUrl = config.friendApplyUrl || 'https://github.com/lushio69';
+
+  return `  <section class="page-hero container links-hero">
+      <p class="eyebrow">Links · ${friends.length}</p>
+      <h1>去别人家的<em>花园坐坐。</em></h1>
+      <p class="page-intro">互联网不只有信息流和推荐算法。这里收集一些朋友的站点，以及那些值得绕路去看的地方。</p>
+    </section>
+
+    <section class="container section section-tight">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">01 / Friends</p>
+          <h2>朋友们</h2>
+        </div>
+        <span class="section-more">${friends.length ? `${friends.length} 个链接` : '虚位以待'}</span>
+      </div>
+      ${
+        friends.length
+          ? `<div class="friends-grid">${cards}</div>`
+          : `<div class="friend-empty">
+              <span class="friend-empty-mark" aria-hidden="true">∅</span>
+              <div>
+                <h3>这里还空着。</h3>
+                <p>第一批友链正在路上。如果你有一个认真打理的小站，欢迎来交换。</p>
+                <a class="text-link" href="#exchange">如何交换友链 ${ICONS.arrow}</a>
+              </div>
+            </div>`
+      }
+    </section>
+
+    <section class="container section links-exchange" id="exchange">
+      <div class="exchange-main">
+        <p class="section-kicker">02 / Exchange</p>
+        <h2>交换友链</h2>
+        <p>我喜欢那些有自己节奏的网站：不一定要日更，但能看出主人在认真照料它。</p>
+        <ul class="exchange-rules">
+          <li>站点有持续更新的原创内容；</li>
+          <li>没有大面积广告、弹窗或强制跳转；</li>
+          <li>愿意在站内保留一个友情链接入口；</li>
+          <li>数学、物理、计算机、阅读或设计相关的个人站点优先。</li>
+        </ul>
+        <a class="button" href="${escapeAttr(applyUrl)}" target="_blank" rel="noopener noreferrer">在 GitHub 上留言 ${ICONS.arrowUpRight}</a>
+      </div>
+      <aside class="site-badge">
+        <p class="footer-label">This site</p>
+        <span class="site-badge-mark" aria-hidden="true">${escapeHtml(config.mark || '∑')}</span>
+        <h3>${escapeHtml(config.title)}</h3>
+        <p>${escapeHtml(config.tagline)}</p>
+        <dl>
+          <div><dt>地址</dt><dd>${escapeHtml(config.url)}</dd></div>
+          <div><dt>简介</dt><dd>${escapeHtml(config.description)}</dd></div>
+        </dl>
+      </aside>
+    </section>`;
+}
+
 export function render404({ config, base }) {
   return `  <section class="not-found container">
       <p class="eyebrow">404 · Undefined</p>

@@ -60,6 +60,7 @@ function main() {
   writeSitemap(posts, pages, series, categories, tags);
   writeRobots();
   write404();
+  writeLinks();
   if (config.customDomain) writeFile(path.join(DIST, 'CNAME'), `${config.customDomain}\n`);
   writeFile(path.join(DIST, '.nojekyll'), '');
 
@@ -584,6 +585,7 @@ function writeSitemap(posts, pages, series, categories, tags) {
     { loc: absoluteUrl('/archives/', config), lastmod: posts[0]?.date || buildDay, priority: '0.7' },
     { loc: absoluteUrl('/categories/', config), lastmod: posts[0]?.date || buildDay, priority: '0.7' },
     { loc: absoluteUrl('/tags/', config), lastmod: posts[0]?.date || buildDay, priority: '0.6' },
+    { loc: absoluteUrl('/links/', config), lastmod: buildDay, priority: '0.5' },
     ...posts.map((post) => ({ loc: absoluteUrl(post.url, config), lastmod: post.date, priority: '0.8' })),
     ...series.map((item) => ({ loc: absoluteUrl(item.url, config), lastmod: item.posts[0]?.date || buildDay, priority: '0.6' })),
     ...categories.map((category) => ({ loc: absoluteUrl(category.url, config), lastmod: category.posts[0]?.date || buildDay, priority: '0.6' })),
@@ -624,4 +626,15 @@ function write404() {
     noindex: true,
   });
   writeFile(path.join(DIST, '404.html'), html);
+}
+
+function writeLinks() {
+  const html = renderLayoutFor({
+    title: '友情链接',
+    description: '朋友的站点，以及值得绕路去看看的地方。',
+    currentPath: '/links/',
+    content: templates.renderLinks({ config, base }),
+    canonical: absoluteUrl('/links/', config),
+  });
+  writeFile(path.join(DIST, 'links', 'index.html'), html);
 }

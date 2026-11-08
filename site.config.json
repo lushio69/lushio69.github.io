@@ -64,10 +64,16 @@
       "url": "/archives/"
     },
     {
+      "label": "友链",
+      "url": "/links/"
+    },
+    {
       "label": "关于",
       "url": "/about/"
     }
   ],
+  "friends": [],
+  "friendApplyUrl": "https://github.com/lushio69/lushio69.github.io/issues/new",
   "comments": {
     "provider": "utterances",
     "repo": "lushio69/lushio69.github.io",

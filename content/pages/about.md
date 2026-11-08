@@ -45,10 +45,6 @@ $$
 e^{i\pi}+1=0 .
 $$
 
-## 订阅
-
-这个博客没有算法推荐，也没有邮件列表。你可以通过 [RSS](/subscribe/) 订阅，让新文章自己来找你。
-
 ## 找到我
 
 这个网站使用纯 Node.js 静态生成，托管在 GitHub Pages 上。你可以在 [GitHub](https://github.com/lushio69) 找到我，或者在文章下方留言。

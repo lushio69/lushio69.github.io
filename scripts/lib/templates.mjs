@@ -91,7 +91,6 @@ export function renderLayout({
   <link rel="canonical" href="${escapeAttr(canonicalUrl)}">
   <link rel="icon" href="${withBase('/assets/favicon.svg', base)}" type="image/svg+xml">
   <link rel="apple-touch-icon" href="${withBase('/assets/apple-touch-icon.png', base)}">
-  <link rel="alternate" type="application/rss+xml" title="${escapeAttr(config.title)} · RSS" href="${withBase('/feed.xml', base)}">
   <link rel="stylesheet" href="${withBase('/assets/styles.css', base)}">
   <link rel="stylesheet" href="${withBase('/assets/katex.min.css', base)}">
   <meta property="og:type" content="${escapeAttr(ogType)}">
@@ -167,8 +166,6 @@ export function renderLayout({
       <div class="footer-column">
         <p class="footer-label">连接</p>
         ${socialLinks(config, base, 'footer-link')}
-        <a class="footer-link" href="${withBase('/subscribe/', base)}">订阅指南</a>
-        <a class="footer-link" href="${withBase('/feed.xml', base)}">RSS 订阅</a>
       </div>
     </div>
     <div class="container footer-bottom">
@@ -574,74 +571,6 @@ function renderComments(config, base) {
       <div class="comments-body">${widget}<noscript><p>评论区需要启用 JavaScript。</p></noscript></div>
     </section>`;
 }
-
-export function renderSubscribe({ config, base, feedUrl }) {
-  const encoded = encodeURIComponent(feedUrl);
-  const readers = [
-    { name: 'Feedly', note: '网页 / iOS / Android', url: `https://feedly.com/i/subscription/feed/${encoded}` },
-    { name: 'Inoreader', note: '网页 / iOS / Android', url: `https://www.inoreader.com/?add_feed=${encoded}` },
-    { name: 'NetNewsWire', note: 'macOS / iOS，开源免费', url: 'https://netnewswire.com/' },
-    { name: 'Thunderbird', note: 'Windows / macOS / Linux', url: 'https://www.thunderbird.net/' },
-    { name: 'Reeder', note: 'macOS / iOS', url: 'https://reederapp.com/' },
-    { name: 'FreshRSS', note: '想自己托管时使用', url: 'https://freshrss.org/' },
-  ];
-
-  return `  <section class="page-hero container subscribe-hero">
-      <p class="eyebrow">Subscribe · RSS</p>
-      <h1>让新文章<em>自己来找你。</em></h1>
-      <p class="page-intro">不需要邮箱，不需要账号，也不会被推荐算法打断。把下面这个地址交给任意一个 RSS 阅读器，它就会定期来看看有没有新文章。</p>
-      <div class="feed-box">
-        <span class="feed-box-label">RSS 地址</span>
-        <code>${escapeHtml(feedUrl)}</code>
-        <button class="button feed-copy" type="button" data-copy-feed data-copy-value="${escapeAttr(feedUrl)}">复制订阅地址</button>
-      </div>
-    </section>
-
-    <section class="container section section-tight subscribe-content">
-      <div class="subscribe-main">
-        <div class="subscribe-block">
-          <p class="section-kicker">01 / What is RSS</p>
-          <h2>RSS 到底是什么？</h2>
-          <p>RSS 是一个固定网址，里面是一份机器可读的文章清单。你把这个网址添加进阅读器，阅读器就会隔一段时间来问一句：“有新文章吗？”有新内容，它就放进你的列表。</p>
-          <p>可以把它理解成一种<strong>不依赖平台的订阅方式</strong>：没有邮件地址，没有推送权限，也不会因为某个 App 改变算法而错过更新。订阅关系只发生在你和这个网址之间。</p>
-        </div>
-
-        <div class="subscribe-block">
-          <p class="section-kicker">02 / How to subscribe</p>
-          <h2>三步开始订阅</h2>
-          <ol class="subscribe-steps">
-            <li><span>1</span><div><strong>复制上面的 RSS 地址</strong><p>也就是 <code>${escapeHtml(feedUrl)}</code>。</p></div></li>
-            <li><span>2</span><div><strong>打开一个 RSS 阅读器</strong><p>网页版可以直接用 Feedly 或 Inoreader；桌面端可以选 NetNewsWire、Thunderbird；手机端也有 Reeder 等选择。</p></div></li>
-            <li><span>3</span><div><strong>粘贴地址，添加订阅</strong><p>大多数阅读器都有“Add feed / 添加订阅源”按钮，把地址粘贴进去即可。之后新文章会自动出现。</p></div></li>
-          </ol>
-        </div>
-
-        <div class="subscribe-block">
-          <p class="section-kicker">03 / Under the hood</p>
-          <h2>这个博客的 RSS 是怎么来的？</h2>
-          <p>每次发布时，构建脚本会把所有文章写进 <code>/feed.xml</code>，里面包含标题、日期、分类、标签、摘要和原文链接。GitHub Pages 只是把这个 XML 文件当作静态资源提供出去，没有数据库，也没有订阅服务器。</p>
-          <p>阅读器会保存文章的标题和摘要；想读完整正文和公式时，点一下标题就会回到网站上。这样公式排版始终和站内一致，也不会在阅读器里变成一堆乱码。</p>
-          <p>读者的阅读器定期请求这个文件；只要文件更新了，订阅者就能看到新文章。就这么简单。</p>
-          <p class="subscribe-tip">直接在浏览器里打开 feed 地址时，你看到的是一段 XML 源码，而不是漂亮的网页——这是正常的。把地址交给阅读器就好。</p>
-        </div>
-      </div>
-
-      <aside class="reader-list">
-        <p class="section-kicker">Choose a reader</p>
-        <h2>常用阅读器</h2>
-        ${readers
-          .map(
-            (reader) => `<a href="${escapeAttr(reader.url)}" target="_blank" rel="noopener noreferrer">
-              <span>${escapeHtml(reader.name)}</span>
-              <small>${escapeHtml(reader.note)}</small>
-            </a>`,
-          )
-          .join('')}
-        <a class="reader-raw" href="${withBase('/feed.xml', base)}" target="_blank" rel="noopener">直接查看 feed.xml ↗</a>
-      </aside>
-    </section>`;
-}
-
 
 export function renderSearchPage({ config, base, posts }) {
   return `  <section class="page-hero container search-page-hero">

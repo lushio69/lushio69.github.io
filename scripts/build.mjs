@@ -52,12 +52,10 @@ function main() {
   }
 
   writeAll(posts, pages, categories, tags);
-  writeFeeds(posts);
   writeSearchIndex(posts);
   writeSitemap(posts, pages, categories, tags);
   writeRobots();
   write404();
-  writeSubscribe();
   if (config.customDomain) writeFile(path.join(DIST, 'CNAME'), `${config.customDomain}\n`);
   writeFile(path.join(DIST, '.nojekyll'), '');
 
@@ -471,42 +469,6 @@ function renderLayoutFor(options) {
   return templates.renderLayout({ config, base, ...options });
 }
 
-function writeFeeds(posts) {
-  const siteTitle = config.title;
-  const self = absoluteUrl('/feed.xml', config);
-  const items = posts
-    .map((post) => {
-      const url = absoluteUrl(post.url, config);
-      const pubDate = new Date(`${post.date}T08:00:00+08:00`).toUTCString();
-      return `    <item>
-      <title>${xmlEscape(post.title)}</title>
-      <link>${xmlEscape(url)}</link>
-      <guid isPermaLink="true">${xmlEscape(url)}</guid>
-      <pubDate>${pubDate}</pubDate>
-      <dc:creator>${xmlEscape(config.author)}</dc:creator>
-      <category domain="${xmlEscape(absoluteUrl(post.category.url, config))}">${xmlEscape(post.category.name)}</category>
-      ${post.tags.map((tag) => `<category>${xmlEscape(tag.name)}</category>`).join('')}
-      <description>${xmlEscape(post.summary)}</description>
-    </item>`;
-    })
-    .join('\n');
-
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
-  <channel>
-    <title>${xmlEscape(siteTitle)}</title>
-    <link>${xmlEscape(absoluteUrl('/', config))}</link>
-    <description>${xmlEscape(config.description)}</description>
-    <language>${xmlEscape(config.lang || 'zh-CN')}</language>
-    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-    <atom:link href="${xmlEscape(self)}" rel="self" type="application/rss+xml"/>
-    ${items}
-  </channel>
-</rss>
-`;
-  writeFile(path.join(DIST, 'feed.xml'), xml);
-}
-
 function writeSearchIndex(posts) {
   const index = posts.map((post) => ({
     title: post.title,
@@ -528,7 +490,6 @@ function writeSitemap(posts, pages, categories, tags) {
     { loc: absoluteUrl('/archives/', config), lastmod: posts[0]?.date || buildDay, priority: '0.7' },
     { loc: absoluteUrl('/categories/', config), lastmod: posts[0]?.date || buildDay, priority: '0.7' },
     { loc: absoluteUrl('/tags/', config), lastmod: posts[0]?.date || buildDay, priority: '0.6' },
-    { loc: absoluteUrl('/subscribe/', config), lastmod: buildDay, priority: '0.6' },
     ...posts.map((post) => ({ loc: absoluteUrl(post.url, config), lastmod: post.date, priority: '0.8' })),
     ...categories.map((category) => ({ loc: absoluteUrl(category.url, config), lastmod: category.posts[0]?.date || buildDay, priority: '0.6' })),
     ...tags.map((tag) => ({ loc: absoluteUrl(tag.url, config), lastmod: tag.posts[0]?.date || buildDay, priority: '0.5' })),
@@ -568,15 +529,4 @@ function write404() {
     noindex: true,
   });
   writeFile(path.join(DIST, '404.html'), html);
-}
-
-function writeSubscribe() {
-  const html = renderLayoutFor({
-    title: '订阅',
-    description: '用 RSS 订阅这个博客，新文章会自己来找你。',
-    currentPath: '/subscribe/',
-    content: templates.renderSubscribe({ config, base, feedUrl: absoluteUrl('/feed.xml', config) }),
-    canonical: absoluteUrl('/subscribe/', config),
-  });
-  writeFile(path.join(DIST, 'subscribe', 'index.html'), html);
 }

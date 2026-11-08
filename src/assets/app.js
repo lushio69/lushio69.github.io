@@ -414,26 +414,6 @@
     }
   });
 
-  const feedCopy = document.querySelector('[data-copy-feed]');
-  if (feedCopy) {
-    feedCopy.addEventListener('click', async () => {
-      const value = feedCopy.getAttribute('data-copy-value') || '';
-      if (!value) return;
-      const original = feedCopy.textContent;
-      try {
-        await copyText(value);
-        feedCopy.textContent = '已复制订阅地址';
-        feedCopy.classList.add('is-copied');
-      } catch (error) {
-        feedCopy.textContent = '复制失败';
-      }
-      window.setTimeout(() => {
-        feedCopy.textContent = original;
-        feedCopy.classList.remove('is-copied');
-      }, 2000);
-    });
-  }
-
   /* ---------------------------------------------------------------------
      Reading progress and table of contents
      --------------------------------------------------------------------- */

@@ -10,7 +10,6 @@ const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'site.config.json'), '
 const base = normalizeBase(config.basePath);
 
 const errors = [];
-const warnings = [];
 let htmlCount = 0;
 let linkCount = 0;
 
@@ -103,12 +102,10 @@ for (const file of files) {
 }
 
 for (const required of [
-  'feed.xml',
   'sitemap.xml',
   'robots.txt',
   'search-index.json',
   '404.html',
-  'subscribe/index.html',
   'categories/index.html',
   'assets/katex.min.css',
   'assets/fonts/KaTeX_Main-Regular.woff2',
@@ -117,17 +114,7 @@ for (const required of [
   if (!fs.existsSync(path.join(DIST, required))) errors.push(`Missing required output: ${required}`);
 }
 
-// Basic sanity checks for the generated feeds and search index.
-try {
-  const feed = fs.readFileSync(path.join(DIST, 'feed.xml'), 'utf8');
-  if (!feed.startsWith('<?xml version="1.0" encoding="UTF-8"?>')) errors.push('feed.xml: missing XML declaration');
-  if (!feed.includes('<rss version="2.0"')) errors.push('feed.xml: missing RSS root');
-  if (!feed.includes('</channel>')) errors.push('feed.xml: unclosed channel');
-  if ((feed.match(/<item>/g) || []).length === 0) warnings.push('feed.xml: no items');
-} catch (error) {
-  errors.push(`feed.xml: ${error.message}`);
-}
-
+// Basic sanity checks for the generated sitemap and search index.
 try {
   const sitemap = fs.readFileSync(path.join(DIST, 'sitemap.xml'), 'utf8');
   if (!sitemap.includes('<urlset')) errors.push('sitemap.xml: missing urlset');
@@ -142,11 +129,6 @@ try {
   else if (index.some((item) => !item.title || !item.url || !item.category)) errors.push('search-index.json: item missing title, url or category');
 } catch (error) {
   errors.push(`search-index.json: ${error.message}`);
-}
-
-if (warnings.length) {
-  console.warn('\n  Warnings:');
-  for (const warning of warnings) console.warn(`   ! ${warning}`);
 }
 
 if (errors.length) {

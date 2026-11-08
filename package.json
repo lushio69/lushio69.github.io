@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "A quiet mathematics blog with KaTeX, categories and RSS, built with plain Node.js for GitHub Pages.",
+  "description": "A quiet mathematics blog with KaTeX and categories, built with plain Node.js for GitHub Pages.",
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",

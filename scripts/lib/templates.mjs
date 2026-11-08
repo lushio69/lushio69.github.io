@@ -86,13 +86,14 @@ export function renderLayout({
   <meta name="author" content="${escapeAttr(config.author)}">
   <meta name="site-base" content="${escapeAttr(base)}">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f4efe5" id="theme-color">
+  <meta name="theme-color" content="#f1f4ee" id="theme-color">
   ${noindex ? '<meta name="robots" content="noindex">' : '<meta name="robots" content="index, follow">'}
   <link rel="canonical" href="${escapeAttr(canonicalUrl)}">
   <link rel="icon" href="${withBase('/assets/favicon.svg', base)}" type="image/svg+xml">
   <link rel="apple-touch-icon" href="${withBase('/assets/apple-touch-icon.png', base)}">
   <link rel="alternate" type="application/rss+xml" title="${escapeAttr(config.title)} · RSS" href="${withBase('/feed.xml', base)}">
   <link rel="stylesheet" href="${withBase('/assets/styles.css', base)}">
+  <link rel="stylesheet" href="${withBase('/assets/katex.min.css', base)}">
   <meta property="og:type" content="${escapeAttr(ogType)}">
   <meta property="og:site_name" content="${escapeAttr(config.title)}">
   <meta property="og:title" content="${escapeAttr(title || config.title)}">
@@ -120,10 +121,10 @@ export function renderLayout({
   <header class="site-header" id="site-header">
     <div class="header-inner">
       <a class="brand" href="${withBase('/', base)}" aria-label="${escapeAttr(config.title)} 首页">
-        <span class="brand-mark" aria-hidden="true">L</span>
+        <span class="brand-mark" aria-hidden="true">${escapeHtml(config.mark || 'L')}</span>
         <span class="brand-text">
           <span class="brand-name">${escapeHtml(config.wordmark || config.title)}</span>
-          <span class="brand-sub">notes &amp; code</span>
+          <span class="brand-sub">math notes</span>
         </span>
       </a>
       <nav class="site-nav" id="site-nav" aria-label="主导航">
@@ -152,11 +153,11 @@ export function renderLayout({
     <div class="container footer-inner">
       <div class="footer-brand">
         <a class="brand brand-footer" href="${withBase('/', base)}">
-          <span class="brand-mark" aria-hidden="true">L</span>
+          <span class="brand-mark" aria-hidden="true">${escapeHtml(config.mark || 'L')}</span>
           <span class="brand-name">${escapeHtml(config.wordmark || config.title)}</span>
         </a>
         <p>${escapeHtml(config.tagline)}</p>
-        <p class="footer-note">保持好奇，保持笨拙。</p>
+        <p class="footer-note">把每一步写清楚。</p>
       </div>
       <div class="footer-column">
         <p class="footer-label">浏览</p>
@@ -166,12 +167,13 @@ export function renderLayout({
       <div class="footer-column">
         <p class="footer-label">连接</p>
         ${socialLinks(config, base, 'footer-link')}
+        <a class="footer-link" href="${withBase('/subscribe/', base)}">订阅指南</a>
         <a class="footer-link" href="${withBase('/feed.xml', base)}">RSS 订阅</a>
       </div>
     </div>
     <div class="container footer-bottom">
       <p>© ${copyright} ${escapeHtml(config.author)}</p>
-      <p class="footer-motto">Written slowly, published with care.</p>
+      <p class="footer-motto">Defined carefully, proved slowly.</p>
       <a href="#top" class="back-top">回到顶部 <span aria-hidden="true">↑</span></a>
     </div>
   </footer>
@@ -201,7 +203,7 @@ export function renderLayout({
 </html>`;
 }
 
-export function renderHome({ config, base, posts, tags, latest }) {
+export function renderHome({ config, base, posts, tags, categories, latest, heroFormula }) {
   const gridPosts = posts.filter((post) => post.slug !== latest?.slug).slice(0, 6);
   const feature = latest
     ? `<a class="hero-feature" href="${withBase(latest.url, base)}" aria-label="阅读最新文章：${escapeAttr(latest.title)}">
@@ -210,7 +212,7 @@ export function renderHome({ config, base, posts, tags, latest }) {
           <span class="feature-stamp">NO. ${String(posts.length).padStart(2, '0')}</span>
         </div>
         <div class="feature-copy">
-          <div class="feature-meta"><span>最新一篇</span><time datetime="${latest.date}">${formatDate(latest.date, 'short')}</time></div>
+          <div class="feature-meta"><span>${escapeHtml(latest.category.name)} · 最新</span><time datetime="${latest.date}">${formatDate(latest.date, 'short')}</time></div>
           <h2>${escapeHtml(latest.title)}</h2>
           <p>${escapeHtml(truncate(latest.summary, 76))}</p>
           <span class="text-link">阅读全文 ${ICONS.arrow}</span>
@@ -220,8 +222,21 @@ export function renderHome({ config, base, posts, tags, latest }) {
 
   const cards = gridPosts.map((post, index) => renderPostCard(post, base, index + 1)).join('');
 
+  const categoryCards = categories
+    .map(
+      (category, index) => `<a class="category-card" href="${withBase(category.url, base)}">
+        <span class="category-index">${String(index + 1).padStart(2, '0')}</span>
+        <span class="category-card-body">
+          <strong>${escapeHtml(category.name)}</strong>
+          <small>${category.count} 篇文章</small>
+        </span>
+        <span class="category-card-arrow" aria-hidden="true">${ICONS.arrowUpRight}</span>
+      </a>`,
+    )
+    .join('');
+
   const tagCloud = tags
-    .slice(0, 10)
+    .slice(0, 12)
     .map(
       (tag) =>
         `<a class="tag-pill" href="${withBase(tag.url, base)}"><span>${escapeHtml(tag.name)}</span><sup>${tag.count}</sup></a>`,
@@ -242,12 +257,13 @@ export function renderHome({ config, base, posts, tags, latest }) {
         <p class="hero-intro">${escapeHtml(config.hero.intro)}</p>
         <div class="hero-actions">
           <a class="button" href="${withBase('/posts/', base)}">开始阅读 ${ICONS.arrow}</a>
-          <a class="text-link" href="${withBase('/about/', base)}">关于这个角落 ${ICONS.arrowUpRight}</a>
+          <a class="text-link" href="${withBase('/about/', base)}">关于这个博客 ${ICONS.arrowUpRight}</a>
         </div>
+        ${heroFormula ? `<div class="hero-formula"><span class="formula-label">a quiet identity</span>${heroFormula}</div>` : ''}
         <div class="hero-foot">
           <span>${posts.length} 篇文章</span>
+          <span>${categories.length} 个分类</span>
           <span>${tags.length} 个标签</span>
-          <span>更新于 ${latest ? formatDate(latest.date, 'short') : '—'}</span>
         </div>
       </div>
       <div class="hero-side">
@@ -259,7 +275,7 @@ export function renderHome({ config, base, posts, tags, latest }) {
     <section class="section container">
       <div class="section-head">
         <div>
-          <p class="section-kicker">Recent notes</p>
+          <p class="section-kicker">01 / Recent notes</p>
           <h2>最近写下的</h2>
         </div>
         <a class="section-more" href="${withBase('/posts/', base)}">全部文章 <span aria-hidden="true">→</span></a>
@@ -270,11 +286,22 @@ export function renderHome({ config, base, posts, tags, latest }) {
     </section>
 
     <section class="section container">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">02 / Categories</p>
+          <h2>按分类阅读</h2>
+        </div>
+        <a class="section-more" href="${withBase('/categories/', base)}">全部分类 <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="category-grid">${categoryCards || '<p class="empty-state">还没有分类。</p>'}</div>
+    </section>
+
+    <section class="section container">
       <div class="tag-panel">
         <div class="tag-panel-copy">
-          <p class="section-kicker">Index</p>
-          <h2>沿着标签走</h2>
-          <p>一些反复出现的主题，像书架上的分区。选一个，随便翻翻。</p>
+          <p class="section-kicker">03 / Tags</p>
+          <h2>标签索引</h2>
+          <p>分类是固定的书架；标签是可以同时出现在很多书架上的关键词。</p>
           <a class="text-link" href="${withBase('/tags/', base)}">查看全部标签 ${ICONS.arrow}</a>
         </div>
         <div class="tag-cloud">${tagCloud}</div>
@@ -283,7 +310,7 @@ export function renderHome({ config, base, posts, tags, latest }) {
 
     <section class="section container">
       <div class="about-strip">
-        <p class="about-quote">“写作不是为了被看见，<br>而是为了把看见的东西留下来。”</p>
+        <p class="about-quote">“证明不是装饰，<br>而是让直觉接受检查。”</p>
         <div class="about-strip-body">
           <p>${escapeHtml(config.bio)}</p>
           <a class="text-link" href="${withBase('/about/', base)}">继续了解我 ${ICONS.arrow}</a>
@@ -296,6 +323,7 @@ export function renderPostCard(post, base, index) {
   return `<article class="post-card" style="--i:${index}">
     <a class="card-media" href="${withBase(post.url, base)}" aria-label="阅读：${escapeAttr(post.title)}">
       ${coverFor(post, base)}
+      <span class="card-category">${escapeHtml(post.category.name)}</span>
       <span class="card-number">${String(index).padStart(2, '0')}</span>
     </a>
     <div class="card-body">
@@ -346,7 +374,7 @@ export function renderArchives({ config, base, posts }) {
               (post) => `<a class="archive-item" href="${withBase(post.url, base)}">
                 <time datetime="${post.date}">${formatDate(post.date, 'month-day')}</time>
                 <span class="archive-title">${escapeHtml(post.title)}</span>
-                <span class="archive-tags">${post.tags.map((tag) => escapeHtml(tag.name)).join(' / ')}</span>
+                <span class="archive-tags">${escapeHtml(post.category.name)}${post.tags.length ? ` · ${post.tags.map((tag) => escapeHtml(tag.name)).join(' / ')}` : ''}</span>
                 <span class="archive-arrow" aria-hidden="true">↗</span>
               </a>`,
             )
@@ -394,11 +422,11 @@ export function renderPost({ config, base, post, prev, next }) {
         <a class="back-link" href="${withBase('/posts/', base)}">← 所有文章</a>
         <div class="post-heading">
           <div class="post-meta">
+            <a class="post-category" href="${withBase(post.category.url, base)}">${escapeHtml(post.category.name)}</a>
+            <span class="dot" aria-hidden="true">·</span>
             <time datetime="${post.date}">${formatDate(post.date)}</time>
             <span class="dot" aria-hidden="true">·</span>
             <span>${post.readingTime} 分钟阅读</span>
-            <span class="dot" aria-hidden="true">·</span>
-            <span>${escapeHtml(post.tags.map((tag) => tag.name).join(' / '))}</span>
           </div>
           <h1>${escapeHtml(post.title)}</h1>
           ${post.summary ? `<p class="post-dek">${escapeHtml(post.summary)}</p>` : ''}
@@ -415,12 +443,13 @@ export function renderPost({ config, base, post, prev, next }) {
       </div>
 
       <footer class="post-footer">
-        <div class="post-end-mark" aria-hidden="true">※</div>
-        <p>谢谢你读到这里。</p>
+        <div class="post-end-mark" aria-hidden="true">∎</div>
+        <p>证毕。谢谢你读到这里。</p>
         <div class="tag-row post-tags">${postTags(post, base)}</div>
         <a class="text-link" href="${withBase('/posts/', base)}">继续翻阅其他文章 ${ICONS.arrow}</a>
       </footer>
       ${pager}
+      ${renderComments(config, base)}
     </article>`;
 }
 
@@ -437,9 +466,9 @@ export function renderTags({ config, base, tags }) {
     .join('');
 
   return `  <section class="page-hero container">
-      <p class="eyebrow">Topics · ${tags.length}</p>
+      <p class="eyebrow">Tags · ${tags.length}</p>
       <h1>散落的<em>关键词。</em></h1>
-      <p class="page-intro">像整理抽屉一样，把写过的文字按主题放好。也许你会在这里找到一条意外的路径。</p>
+      <p class="page-intro">标签不隶属于某一个分类：同一个“直觉”可以出现在数学分析、线性代数和概率论里。它们负责把跨书架的文章连在一起。</p>
     </section>
     <section class="container section section-tight">
       <div class="tag-grid">${cards || '<p class="empty-state">还没有标签。</p>'}</div>
@@ -459,15 +488,170 @@ export function renderTag({ config, base, tag, posts }) {
     </section>`;
 }
 
+export function renderCategories({ config, base, categories }) {
+  const cards = categories
+    .map(
+      (category, index) => `<a class="category-card category-card-large" href="${withBase(category.url, base)}">
+        <span class="category-index">${String(index + 1).padStart(2, '0')}</span>
+        <span class="category-card-body">
+          <strong>${escapeHtml(category.name)}</strong>
+          <small>${category.count} 篇文章 · 最近 ${formatDate(category.posts[0].date, 'short')}</small>
+        </span>
+        <span class="category-card-arrow" aria-hidden="true">${ICONS.arrowUpRight}</span>
+      </a>`,
+    )
+    .join('');
+
+  return `  <section class="page-hero container">
+      <p class="eyebrow">Categories · ${categories.length}</p>
+      <h1>固定的<em>书架。</em></h1>
+      <p class="page-intro">分类是稳定的书架：每篇文章只归入一个分类。标签则是可以同时贴在很多书架上的关键词——两者各管一件事，不必混在一起。</p>
+    </section>
+    <section class="container section section-tight">
+      <div class="category-grid category-grid-page">${cards || '<p class="empty-state">还没有分类。</p>'}</div>
+      <div class="category-note">
+        <p><strong>分类</strong> 用来回答「这篇文章属于哪个领域」；<strong>标签</strong> 用来回答「它还和什么有关」。</p>
+        <a class="text-link" href="${withBase('/tags/', base)}">去看标签索引 ${ICONS.arrow}</a>
+      </div>
+    </section>`;
+}
+
+export function renderCategory({ config, base, category, posts }) {
+  const cards = posts.map((post, index) => renderPostCard(post, base, index + 1)).join('');
+  return `  <section class="page-hero container category-page-hero">
+      <a class="back-link" href="${withBase('/categories/', base)}">← 所有分类</a>
+      <p class="eyebrow">Category · ${category.count} notes</p>
+      <h1><em>${escapeHtml(category.name)}</em></h1>
+      <p class="page-intro">${escapeHtml(category.description || `归在这个分类下的全部文章，按时间从新到旧排列。`)}</p>
+    </section>
+    <section class="container section section-tight">
+      <div class="post-grid post-grid-all">${cards}</div>
+    </section>`;
+}
+
+function renderComments(config, base) {
+  const comments = config.comments || {};
+  const provider = String(comments.provider || 'none').toLowerCase();
+  if (provider === 'none' || !comments.repo) return '';
+
+  let widget = '';
+  if (provider === 'utterances') {
+    widget = `<script src="https://utteranc.es/client.js"
+        repo="${escapeAttr(comments.repo)}"
+        issue-term="${escapeAttr(comments.issueTerm || 'pathname')}"
+        ${comments.label ? `label="${escapeAttr(comments.label)}"` : ''}
+        theme="github-light"
+        crossorigin="anonymous"
+        async></script>`;
+  } else if (provider === 'giscus') {
+    if (!comments.repoId || !comments.categoryId) return '';
+    widget = `<script src="https://giscus.app/client.js"
+        data-repo="${escapeAttr(comments.repo)}"
+        data-repo-id="${escapeAttr(comments.repoId)}"
+        data-category="${escapeAttr(comments.category || 'Announcements')}"
+        data-category-id="${escapeAttr(comments.categoryId)}"
+        data-mapping="${escapeAttr(comments.mapping || 'pathname')}"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="bottom"
+        data-theme="light"
+        data-lang="zh-CN"
+        crossorigin="anonymous"
+        async></script>`;
+  } else {
+    return '';
+  }
+
+  return `<section class="comments" id="comments" data-comments data-provider="${escapeAttr(provider)}">
+      <div class="comments-head">
+        <div>
+          <p class="section-kicker">Discussion</p>
+          <h2>讨论</h2>
+        </div>
+        <p>评论由 GitHub Issues 托管。登录 GitHub 后即可留言，不需要额外注册。</p>
+      </div>
+      <div class="comments-body">${widget}<noscript><p>评论区需要启用 JavaScript。</p></noscript></div>
+    </section>`;
+}
+
+export function renderSubscribe({ config, base, feedUrl }) {
+  const encoded = encodeURIComponent(feedUrl);
+  const readers = [
+    { name: 'Feedly', note: '网页 / iOS / Android', url: `https://feedly.com/i/subscription/feed/${encoded}` },
+    { name: 'Inoreader', note: '网页 / iOS / Android', url: `https://www.inoreader.com/?add_feed=${encoded}` },
+    { name: 'NetNewsWire', note: 'macOS / iOS，开源免费', url: 'https://netnewswire.com/' },
+    { name: 'Thunderbird', note: 'Windows / macOS / Linux', url: 'https://www.thunderbird.net/' },
+    { name: 'Reeder', note: 'macOS / iOS', url: 'https://reederapp.com/' },
+    { name: 'FreshRSS', note: '想自己托管时使用', url: 'https://freshrss.org/' },
+  ];
+
+  return `  <section class="page-hero container subscribe-hero">
+      <p class="eyebrow">Subscribe · RSS</p>
+      <h1>让新文章<em>自己来找你。</em></h1>
+      <p class="page-intro">不需要邮箱，不需要账号，也不会被推荐算法打断。把下面这个地址交给任意一个 RSS 阅读器，它就会定期来看看有没有新文章。</p>
+      <div class="feed-box">
+        <span class="feed-box-label">RSS 地址</span>
+        <code>${escapeHtml(feedUrl)}</code>
+        <button class="button feed-copy" type="button" data-copy-feed data-copy-value="${escapeAttr(feedUrl)}">复制订阅地址</button>
+      </div>
+    </section>
+
+    <section class="container section section-tight subscribe-content">
+      <div class="subscribe-main">
+        <div class="subscribe-block">
+          <p class="section-kicker">01 / What is RSS</p>
+          <h2>RSS 到底是什么？</h2>
+          <p>RSS 是一个固定网址，里面是一份机器可读的文章清单。你把这个网址添加进阅读器，阅读器就会隔一段时间来问一句：“有新文章吗？”有新内容，它就放进你的列表。</p>
+          <p>可以把它理解成一种<strong>不依赖平台的订阅方式</strong>：没有邮件地址，没有推送权限，也不会因为某个 App 改变算法而错过更新。订阅关系只发生在你和这个网址之间。</p>
+        </div>
+
+        <div class="subscribe-block">
+          <p class="section-kicker">02 / How to subscribe</p>
+          <h2>三步开始订阅</h2>
+          <ol class="subscribe-steps">
+            <li><span>1</span><div><strong>复制上面的 RSS 地址</strong><p>也就是 <code>${escapeHtml(feedUrl)}</code>。</p></div></li>
+            <li><span>2</span><div><strong>打开一个 RSS 阅读器</strong><p>网页版可以直接用 Feedly 或 Inoreader；桌面端可以选 NetNewsWire、Thunderbird；手机端也有 Reeder 等选择。</p></div></li>
+            <li><span>3</span><div><strong>粘贴地址，添加订阅</strong><p>大多数阅读器都有“Add feed / 添加订阅源”按钮，把地址粘贴进去即可。之后新文章会自动出现。</p></div></li>
+          </ol>
+        </div>
+
+        <div class="subscribe-block">
+          <p class="section-kicker">03 / Under the hood</p>
+          <h2>这个博客的 RSS 是怎么来的？</h2>
+          <p>每次发布时，构建脚本会把所有文章写进 <code>/feed.xml</code>，里面包含标题、日期、分类、标签、摘要和原文链接。GitHub Pages 只是把这个 XML 文件当作静态资源提供出去，没有数据库，也没有订阅服务器。</p>
+          <p>阅读器会保存文章的标题和摘要；想读完整正文和公式时，点一下标题就会回到网站上。这样公式排版始终和站内一致，也不会在阅读器里变成一堆乱码。</p>
+          <p>读者的阅读器定期请求这个文件；只要文件更新了，订阅者就能看到新文章。就这么简单。</p>
+          <p class="subscribe-tip">直接在浏览器里打开 feed 地址时，你看到的是一段 XML 源码，而不是漂亮的网页——这是正常的。把地址交给阅读器就好。</p>
+        </div>
+      </div>
+
+      <aside class="reader-list">
+        <p class="section-kicker">Choose a reader</p>
+        <h2>常用阅读器</h2>
+        ${readers
+          .map(
+            (reader) => `<a href="${escapeAttr(reader.url)}" target="_blank" rel="noopener noreferrer">
+              <span>${escapeHtml(reader.name)}</span>
+              <small>${escapeHtml(reader.note)}</small>
+            </a>`,
+          )
+          .join('')}
+        <a class="reader-raw" href="${withBase('/feed.xml', base)}" target="_blank" rel="noopener">直接查看 feed.xml ↗</a>
+      </aside>
+    </section>`;
+}
+
+
 export function renderSearchPage({ config, base, posts }) {
   return `  <section class="page-hero container search-page-hero">
       <p class="eyebrow">Search · ${posts.length}</p>
       <h1>找一个<em>词。</em></h1>
-      <p class="page-intro">标题、标签、正文都可以搜。输入一个你记得的片段，剩下的交给这里。</p>
+      <p class="page-intro">标题、分类、标签、正文都可以搜。输入一个你记得的片段，剩下的交给这里。</p>
       <div class="page-search">
         <span class="search-icon">${ICONS.search}</span>
         <label class="sr-only" for="page-search-input">搜索文章</label>
-        <input id="page-search-input" type="search" placeholder="例如：写作、CSS、阅读…" autocomplete="off">
+        <input id="page-search-input" type="search" placeholder="例如：极限、特征值、贝叶斯…" autocomplete="off">
       </div>
       <div class="page-search-results" data-page-search-results>
         <p class="search-hint">输入关键词开始搜索。</p>
@@ -486,7 +670,7 @@ export function renderPage({ config, base, page }) {
         ${page.html}
       </div>
       <div class="page-signoff">
-        <span class="brand-mark" aria-hidden="true">L</span>
+        <span class="brand-mark" aria-hidden="true">${escapeHtml(config.mark || 'L')}</span>
         <p>${escapeHtml(config.author)}<br><span>${escapeHtml(config.tagline)}</span></p>
       </div>
     </article>`;
@@ -494,9 +678,9 @@ export function renderPage({ config, base, page }) {
 
 export function render404({ config, base }) {
   return `  <section class="not-found container">
-      <p class="eyebrow">404 · Lost in thought</p>
+      <p class="eyebrow">404 · Undefined</p>
       <p class="not-found-number" aria-hidden="true">404</p>
-      <h1>这一页，<em>大概走丢了。</em></h1>
+      <h1>这一页，<em>不在定义域里。</em></h1>
       <p>可能是链接变了，也可能它从来没有存在过。不如回到首页，重新开始。</p>
       <a class="button" href="${withBase('/', base)}">回到首页 ${ICONS.arrow}</a>
     </section>`;

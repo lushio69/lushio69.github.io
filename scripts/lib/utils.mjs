@@ -26,6 +26,30 @@ export function stripHtml(html = '') {
     .trim();
 }
 
+/**
+ * Extract readable text from Markdown for search and fallback summaries.
+ * Working from the source avoids KaTeX's MathML/HTML duplicate text.
+ */
+export function markdownToPlainText(markdown = '') {
+  return String(markdown)
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/~~~[\s\S]*?~~~/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s*>\s?/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/\$\$([\s\S]*?)\$\$/g, ' $1 ')
+    .replace(/\\\[([\s\S]*?)\\\]/g, ' $1 ')
+    .replace(/\\\(([\s\S]*?)\\\)/g, ' $1 ')
+    .replace(/\$([^$\n]+?)\$/g, ' $1 ')
+    .replace(/[`*_~]/g, '')
+    .replace(/<[a-zA-Z/][^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function normalizeBase(basePath = '/') {
   if (!basePath || basePath === '/') return '/';
   return `/${String(basePath).replace(/^\/+|\/+$/g, '')}/`;

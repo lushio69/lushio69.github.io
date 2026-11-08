@@ -1,35 +1,38 @@
 {
   "title": "Lushio",
+  "mark": "∑",
   "wordmark": "Lushio",
-  "description": "代码、文字与生活的安静角落。",
+  "description": "一个关于数学分析、线性代数与概率的安静博客。",
   "author": "Lushio",
   "lang": "zh-CN",
   "locale": "zh_CN",
   "url": "https://lushio69.github.io",
   "basePath": "/",
   "startYear": 2024,
-  "tagline": "在代码与文字之间，记录缓慢发生的事。",
-  "bio": "一个写代码的人，偶尔也写一点不着急的文字。这里存放读过的书、做过的项目，以及那些值得多想一会儿的瞬间。",
+  "tagline": "在定义与直觉之间，写下推理的痕迹。",
+  "categoryOrder": ["数学分析", "线性代数", "概率论", "随笔"],
+  "bio": "一个写代码的人，也在认真地学数学。这里存放分析、代数与概率里的想法：定义背后的动机、证明之间的路，以及那些突然想通的瞬间。",
   "hero": {
-    "eyebrow": "笔记 · 代码 · 生活",
-    "title": "把漫长的时间，",
-    "titleAccent": "写成可以重读的句子。",
-    "intro": "这是一个不追逐更新频率的个人博客。写技术，也写技术之外的事；把值得记住的东西留在这里，等未来的自己回来翻阅。"
+    "eyebrow": "数学 · 证明 · 直觉",
+    "title": "把直觉，",
+    "titleAccent": "推成证明。",
+    "intro": "这里不追逐更新频率，也不做习题答案的搬运工。更想记录的是：一个定义为什么这样下，一步证明从哪里来，以及数学如何改变我们看世界的方式。",
+    "formula": "\\int_0^\\infty e^{-x^2}\\,\\dd x=\\frac{\\sqrt{\\pi}}{2}"
   },
   "now": {
     "title": "此刻",
     "items": [
       {
-        "label": "在做",
-        "value": "一个很小、但很喜欢的个人项目"
+        "label": "在学",
+        "value": "测度论，以及如何把证明写短"
       },
       {
         "label": "在读",
-        "value": "《禅与摩托车维修艺术》"
+        "value": "Rudin《数学分析原理》"
       },
       {
-        "label": "在听",
-        "value": "坂本龙一，以及雨声"
+        "label": "在写",
+        "value": "一组关于「定义为什么长这样」的笔记"
       }
     ]
   },
@@ -45,16 +48,26 @@
       "url": "/posts/"
     },
     {
-      "label": "归档",
-      "url": "/archives/"
+      "label": "分类",
+      "url": "/categories/"
     },
     {
       "label": "标签",
       "url": "/tags/"
     },
     {
+      "label": "归档",
+      "url": "/archives/"
+    },
+    {
       "label": "关于",
       "url": "/about/"
     }
-  ]
+  ],
+  "comments": {
+    "provider": "utterances",
+    "repo": "lushio69/lushio69.github.io",
+    "issueTerm": "pathname",
+    "label": "comment"
+  }
 }

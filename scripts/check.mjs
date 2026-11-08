@@ -102,7 +102,18 @@ for (const file of files) {
   }
 }
 
-for (const required of ['feed.xml', 'sitemap.xml', 'robots.txt', 'search-index.json', '404.html', '.nojekyll']) {
+for (const required of [
+  'feed.xml',
+  'sitemap.xml',
+  'robots.txt',
+  'search-index.json',
+  '404.html',
+  'subscribe/index.html',
+  'categories/index.html',
+  'assets/katex.min.css',
+  'assets/fonts/KaTeX_Main-Regular.woff2',
+  '.nojekyll',
+]) {
   if (!fs.existsSync(path.join(DIST, required))) errors.push(`Missing required output: ${required}`);
 }
 
@@ -128,7 +139,7 @@ try {
 try {
   const index = JSON.parse(fs.readFileSync(path.join(DIST, 'search-index.json'), 'utf8'));
   if (!Array.isArray(index)) errors.push('search-index.json: expected an array');
-  else if (index.some((item) => !item.title || !item.url)) errors.push('search-index.json: item missing title or url');
+  else if (index.some((item) => !item.title || !item.url || !item.category)) errors.push('search-index.json: item missing title, url or category');
 } catch (error) {
   errors.push(`search-index.json: ${error.message}`);
 }

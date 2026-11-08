@@ -1,3 +1,4 @@
+import { renderMath } from './math.mjs';
 import { escapeAttr, escapeHtml, slugify, stripHtml } from './utils.mjs';
 
 /**
@@ -26,6 +27,29 @@ function renderBlocks(lines, ctx) {
 
     if (!line.trim()) {
       i += 1;
+      continue;
+    }
+
+    const displayMath = line.match(/^ {0,3}(\$\$|\\\[)\s*(.*)$/);
+    if (displayMath) {
+      const closing = displayMath[1] === '$$' ? '$$' : '\\]';
+      let tex = displayMath[2];
+      i += 1;
+      if (tex.includes(closing)) {
+        tex = tex.slice(0, tex.indexOf(closing));
+      } else {
+        while (i < lines.length) {
+          const current = lines[i];
+          if (current.includes(closing)) {
+            tex += `\n${current.slice(0, current.indexOf(closing))}`;
+            i += 1;
+            break;
+          }
+          tex += `\n${current}`;
+          i += 1;
+        }
+      }
+      out.push(`<div class="math-display">${renderMath(tex, true)}</div>`);
       continue;
     }
 
@@ -258,6 +282,7 @@ function renderList(lines, start, ctx) {
 function isBlockStart(lines, i) {
   const line = lines[i];
   if (!line || !line.trim()) return true;
+  if (/^ {0,3}(\$\$|\\\[)/.test(line)) return true;
   if (/^ {0,3}(```+|~~~+)/.test(line)) return true;
   if (/^ {0,3}#{1,6}\s+/.test(line)) return true;
   if (/^ {0,3}>/.test(line)) return true;
@@ -295,11 +320,21 @@ function linkLabel(value = '') {
 
 function renderInline(raw = '') {
   const codeTokens = [];
+  const mathTokens = [];
   let text = String(raw).replace(/(`+)([\s\S]*?)\1/g, (_, ticks, code) => {
     const token = `\u0000CODETOKEN${codeTokens.length}\u0000`;
     codeTokens.push(`<code>${escapeHtml(code.replace(/^ | $/g, ''))}</code>`);
     return token;
   });
+
+  const stashMath = (tex, displayMode = false) => {
+    const token = `\u0000MATHTOKEN${mathTokens.length}\u0000`;
+    mathTokens.push(renderMath(tex, displayMode));
+    return token;
+  };
+
+  text = text.replace(/\\\(([\s\S]+?)\\\)/g, (_, tex) => stashMath(tex));
+  text = text.replace(/(?<!\\)\$(?!\s)([^$\n]+?)(?<!\s)\$(?!\d)/g, (_, tex) => stashMath(tex));
 
   text = escapeHtml(text);
 
@@ -329,6 +364,7 @@ function renderInline(raw = '') {
   text = text.replace(/(?<!\w)\*([^*\n]+)\*(?!\w)/g, '<em>$1</em>');
   text = text.replace(/(?<!\w)_([^_\n]+)_(?!\w)/g, '<em>$1</em>');
 
+  text = text.replace(/\u0000MATHTOKEN(\d+)\u0000/g, (_, index) => mathTokens[Number(index)]);
   text = text.replace(/\u0000CODETOKEN(\d+)\u0000/g, (_, index) => codeTokens[Number(index)]);
   return text;
 }

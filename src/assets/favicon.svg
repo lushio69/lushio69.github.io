@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Lushio">
-  <rect width="64" height="64" rx="15" fill="#211f1b"/>
-  <path d="M23 17v30h20" fill="none" stroke="#f4efe5" stroke-width="4" stroke-linecap="square"/>
-  <circle cx="47" cy="45" r="4.5" fill="#b4452c"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Lushio 数学笔记">
+  <rect width="64" height="64" rx="8" fill="#0e6b54"/>
+  <text x="30" y="45" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="40" fill="#f1f4ee">∑</text>
+  <circle cx="50" cy="49" r="4" fill="#d3a061"/>
 </svg>

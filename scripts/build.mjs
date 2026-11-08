@@ -3,18 +3,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { renderMarkdown } from './lib/markdown.mjs';
+import { renderMath } from './lib/math.mjs';
 import * as templates from './lib/templates.mjs';
 import {
   absoluteUrl,
   applyBaseToHtml,
   copyDir,
-  escapeAttr,
-  escapeHtml,
   formatDate,
+  markdownToPlainText,
   normalizeBase,
   readingTime,
   slugify,
-  stripHtml,
   truncate,
   withBase,
   writeFile,
@@ -26,10 +25,10 @@ const DIST = path.join(ROOT, 'dist');
 const POSTS_DIR = path.join(ROOT, 'content', 'posts');
 const PAGES_DIR = path.join(ROOT, 'content', 'pages');
 const ASSETS_DIR = path.join(ROOT, 'src', 'assets');
+const KATEX_DIR = path.join(ROOT, 'vendor', 'katex');
 
 const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'site.config.json'), 'utf8'));
 const base = normalizeBase(config.basePath);
-const siteUrl = String(config.url || '').replace(/\/+$/, '');
 const buildDate = new Date().toISOString();
 const buildDay = buildDate.slice(0, 10);
 
@@ -41,27 +40,41 @@ function main() {
   fs.mkdirSync(DIST, { recursive: true });
 
   if (fs.existsSync(ASSETS_DIR)) copyDir(ASSETS_DIR, path.join(DIST, 'assets'));
+  installKatex();
 
   const posts = loadPosts();
   const pages = loadPages();
+  const categories = buildCategories(posts);
   const tags = buildTags(posts);
 
   if (posts.length === 0) {
     console.warn('  ! No published posts found.');
   }
 
-  writeAll(posts, pages, tags);
-  writeFeeds(posts, tags);
+  writeAll(posts, pages, categories, tags);
+  writeFeeds(posts);
   writeSearchIndex(posts);
-  writeSitemap(posts, pages, tags);
+  writeSitemap(posts, pages, categories, tags);
   writeRobots();
-  write404(posts);
+  write404();
+  writeSubscribe();
   if (config.customDomain) writeFile(path.join(DIST, 'CNAME'), `${config.customDomain}\n`);
   writeFile(path.join(DIST, '.nojekyll'), '');
 
-  console.log(`\n  Built ${posts.length} posts, ${pages.length} pages, ${tags.length} tags.`);
+  console.log(`\n  Built ${posts.length} posts, ${pages.length} pages, ${categories.length} categories, ${tags.length} tags.`);
   console.log(`  Output: ${path.relative(ROOT, DIST)}\\`);
   console.log(`  Local:  http://localhost:4173${base}\n`);
+}
+
+function installKatex() {
+  const css = path.join(KATEX_DIR, 'katex.min.css');
+  const fonts = path.join(KATEX_DIR, 'fonts');
+  if (!fs.existsSync(css) || !fs.existsSync(fonts)) {
+    throw new Error('KaTeX vendor files are missing. Restore vendor/katex/ before building.');
+  }
+  fs.mkdirSync(path.join(DIST, 'assets'), { recursive: true });
+  fs.copyFileSync(css, path.join(DIST, 'assets', 'katex.min.css'));
+  copyDir(fonts, path.join(DIST, 'assets', 'fonts'));
 }
 
 function validateConfig() {
@@ -191,9 +204,11 @@ function loadPosts() {
 
     const rawTags = Array.isArray(data.tags) ? data.tags : data.tags ? [data.tags] : [];
     const tagNames = [...new Set(rawTags.map(String).map((tag) => tag.trim()).filter(Boolean))];
+    const categoryName = data.category ? String(data.category).trim() : '未分类';
+    const categorySlug = slugify(categoryName, 'category');
     const { html: rawHtml, headings } = renderMarkdown(body);
     const html = applyBaseToHtml(rawHtml, base);
-    const plainText = stripHtml(html);
+    const plainText = markdownToPlainText(body);
     const summary = data.summary ? String(data.summary) : truncate(plainText, 150);
 
     posts.push({
@@ -205,6 +220,11 @@ function loadPosts() {
       summary,
       cover: data.cover ? String(data.cover) : '',
       featured: data.featured === true,
+      category: {
+        name: categoryName,
+        slug: categorySlug,
+        url: `/categories/${encodeURIComponent(categorySlug)}/`,
+      },
       tags: tagNames.map((name) => ({ name, slug: slugify(name, 'tag'), url: `/tags/${encodeURIComponent(slugify(name, 'tag'))}/` })),
       url: `/posts/${encodeURIComponent(slug)}/`,
       outputPath: path.join('posts', slug, 'index.html'),
@@ -247,6 +267,30 @@ function loadPages() {
   return pages;
 }
 
+function buildCategories(posts) {
+  const map = new Map();
+  for (const post of posts) {
+    const key = post.category.slug;
+    if (!map.has(key)) {
+      map.set(key, { ...post.category, posts: [], count: 0 });
+    }
+    const entry = map.get(key);
+    entry.posts.push(post);
+    entry.count += 1;
+  }
+  const order = Array.isArray(config.categoryOrder) ? config.categoryOrder.map((name) => slugify(name, 'category')) : [];
+  return [...map.values()].sort((a, b) => {
+    const ai = order.indexOf(a.slug);
+    const bi = order.indexOf(b.slug);
+    if (ai >= 0 || bi >= 0) {
+      if (ai < 0) return 1;
+      if (bi < 0) return -1;
+      return ai - bi;
+    }
+    return b.count - a.count || a.name.localeCompare(b.name, 'zh-CN');
+  });
+}
+
 function buildTags(posts) {
   const map = new Map();
   for (const post of posts) {
@@ -260,10 +304,10 @@ function buildTags(posts) {
   return [...map.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'zh-CN'));
 }
 
-function writeAll(posts, pages, tags) {
+function writeAll(posts, pages, categories, tags) {
   const latest = posts[0] || null;
 
-  const home = renderHomePage(posts, tags, latest);
+  const home = renderHomePage(posts, categories, tags, latest);
   writeFile(path.join(DIST, 'index.html'), home);
 
   const postsIndex = renderLayoutFor({
@@ -293,6 +337,15 @@ function writeAll(posts, pages, tags) {
   });
   writeFile(path.join(DIST, 'tags', 'index.html'), tagIndex);
 
+  const categoryIndex = renderLayoutFor({
+    title: '分类',
+    description: '按稳定的领域分类浏览文章。',
+    currentPath: '/categories/',
+    content: templates.renderCategories({ config, base, categories }),
+    canonical: absoluteUrl('/categories/', config),
+  });
+  writeFile(path.join(DIST, 'categories', 'index.html'), categoryIndex);
+
   const search = renderLayoutFor({
     title: '搜索',
     description: '搜索这个博客里的文章。',
@@ -319,6 +372,7 @@ function writeAll(posts, pages, tags) {
       mainEntityOfPage: absoluteUrl(post.url, config),
       url: absoluteUrl(post.url, config),
       image: post.cover ? absoluteUrl(post.cover, config) : undefined,
+      articleSection: post.category.name,
       keywords: post.tags.map((tag) => tag.name).join(', '),
       inLanguage: config.lang || 'zh-CN',
     };
@@ -353,6 +407,23 @@ function writeAll(posts, pages, tags) {
     writeFile(path.join(DIST, 'tags', tag.slug, 'index.html'), html);
   }
 
+  for (const category of categories) {
+    const html = renderLayoutFor({
+      title: `分类：${category.name}`,
+      description: `${category.name} 分类下的全部文章。`,
+      currentPath: category.url,
+      content: templates.renderCategory({ config, base, category, posts: category.posts }),
+      canonical: absoluteUrl(category.url, config),
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: `分类：${category.name}`,
+        url: absoluteUrl(category.url, config),
+      },
+    });
+    writeFile(path.join(DIST, 'categories', category.slug, 'index.html'), html);
+  }
+
   for (const page of pages) {
     const html = renderLayoutFor({
       title: page.title,
@@ -372,13 +443,14 @@ function writeAll(posts, pages, tags) {
   }
 }
 
-function renderHomePage(posts, tags, latest) {
+function renderHomePage(posts, categories, tags, latest) {
+  const heroFormula = config.hero.formula ? renderMath(config.hero.formula, true) : '';
   return templates.renderLayout({
     config,
     base,
     title: '',
     description: config.description,
-    content: templates.renderHome({ config, base, posts, tags, latest }),
+    content: templates.renderHome({ config, base, posts, categories, tags, latest, heroFormula }),
     currentPath: '/',
     canonical: absoluteUrl('/', config),
     isHome: true,
@@ -399,29 +471,28 @@ function renderLayoutFor(options) {
   return templates.renderLayout({ config, base, ...options });
 }
 
-function writeFeeds(posts, tags) {
+function writeFeeds(posts) {
   const siteTitle = config.title;
   const self = absoluteUrl('/feed.xml', config);
   const items = posts
     .map((post) => {
       const url = absoluteUrl(post.url, config);
       const pubDate = new Date(`${post.date}T08:00:00+08:00`).toUTCString();
-      const content = post.html.replace(/(href|src)="\/(?!\/)/g, `$1="${siteUrl}/`);
       return `    <item>
       <title>${xmlEscape(post.title)}</title>
       <link>${xmlEscape(url)}</link>
       <guid isPermaLink="true">${xmlEscape(url)}</guid>
       <pubDate>${pubDate}</pubDate>
       <dc:creator>${xmlEscape(config.author)}</dc:creator>
+      <category domain="${xmlEscape(absoluteUrl(post.category.url, config))}">${xmlEscape(post.category.name)}</category>
       ${post.tags.map((tag) => `<category>${xmlEscape(tag.name)}</category>`).join('')}
       <description>${xmlEscape(post.summary)}</description>
-      <content:encoded><![CDATA[${content.replace(/]]>/g, ']]]]><![CDATA[>')}]]></content:encoded>
     </item>`;
     })
     .join('\n');
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>${xmlEscape(siteTitle)}</title>
     <link>${xmlEscape(absoluteUrl('/', config))}</link>
@@ -442,6 +513,7 @@ function writeSearchIndex(posts) {
     url: withBase(post.url, base),
     date: post.date,
     dateLabel: formatDate(post.date, 'short'),
+    category: post.category.name,
     tags: post.tags.map((tag) => tag.name),
     summary: post.summary,
     content: truncate(post.plainText, 5000),
@@ -449,13 +521,16 @@ function writeSearchIndex(posts) {
   writeFile(path.join(DIST, 'search-index.json'), JSON.stringify(index));
 }
 
-function writeSitemap(posts, pages, tags) {
+function writeSitemap(posts, pages, categories, tags) {
   const urls = [
     { loc: absoluteUrl('/', config), lastmod: posts[0]?.date || buildDay, priority: '1.0' },
     { loc: absoluteUrl('/posts/', config), lastmod: posts[0]?.date || buildDay, priority: '0.9' },
     { loc: absoluteUrl('/archives/', config), lastmod: posts[0]?.date || buildDay, priority: '0.7' },
+    { loc: absoluteUrl('/categories/', config), lastmod: posts[0]?.date || buildDay, priority: '0.7' },
     { loc: absoluteUrl('/tags/', config), lastmod: posts[0]?.date || buildDay, priority: '0.6' },
+    { loc: absoluteUrl('/subscribe/', config), lastmod: buildDay, priority: '0.6' },
     ...posts.map((post) => ({ loc: absoluteUrl(post.url, config), lastmod: post.date, priority: '0.8' })),
+    ...categories.map((category) => ({ loc: absoluteUrl(category.url, config), lastmod: category.posts[0]?.date || buildDay, priority: '0.6' })),
     ...tags.map((tag) => ({ loc: absoluteUrl(tag.url, config), lastmod: tag.posts[0]?.date || buildDay, priority: '0.5' })),
     ...pages.map((page) => ({ loc: absoluteUrl(page.url, config), lastmod: buildDay, priority: '0.6' })),
   ];
@@ -483,7 +558,7 @@ function writeRobots() {
   );
 }
 
-function write404(posts) {
+function write404() {
   const html = renderLayoutFor({
     title: '页面走丢了',
     description: '404 — 页面不存在。',
@@ -493,4 +568,15 @@ function write404(posts) {
     noindex: true,
   });
   writeFile(path.join(DIST, '404.html'), html);
+}
+
+function writeSubscribe() {
+  const html = renderLayoutFor({
+    title: '订阅',
+    description: '用 RSS 订阅这个博客，新文章会自己来找你。',
+    currentPath: '/subscribe/',
+    content: templates.renderSubscribe({ config, base, feedUrl: absoluteUrl('/feed.xml', config) }),
+    canonical: absoluteUrl('/subscribe/', config),
+  });
+  writeFile(path.join(DIST, 'subscribe', 'index.html'), html);
 }

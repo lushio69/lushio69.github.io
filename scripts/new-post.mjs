@@ -58,7 +58,8 @@ async function main() {
   const content = `---
 title: "${safeTitle}"
 date: ${date}
-tags: [随笔]
+category: 随笔
+tags: [数学]
 summary: ""
 draft: true
 ---
@@ -67,7 +68,11 @@ draft: true
 
 ## 一个小标题
 
-正文段落。
+行内公式可以写成 $E = mc^2$。
+
+$$
+\\int_0^1 x^2 \\,\\dd x = \\frac{1}{3}
+$$
 
 > 一句想留下的话。
 `;

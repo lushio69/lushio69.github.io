@@ -16,11 +16,12 @@
 
   function applyTheme(theme) {
     root.dataset.theme = theme;
-    if (themeColor) themeColor.content = theme === 'dark' ? '#141412' : '#f4efe5';
+    if (themeColor) themeColor.content = theme === 'dark' ? '#0e1512' : '#f1f4ee';
     if (themeToggle) {
       themeToggle.setAttribute('aria-label', theme === 'dark' ? '切换到浅色主题' : '切换到深色主题');
       themeToggle.setAttribute('title', theme === 'dark' ? '切换到浅色主题' : '切换到深色主题');
     }
+    syncCommentsTheme();
   }
 
   if (!root.dataset.theme || root.dataset.theme === 'auto') {
@@ -50,6 +51,39 @@
     } catch (error) {}
     if (!saved) applyTheme(event.matches ? 'dark' : 'light');
   });
+
+  function syncCommentsTheme() {
+    const comments = document.querySelector('[data-comments]');
+    if (!comments) return;
+    comments.querySelectorAll('iframe').forEach((frame) => {
+      if (!frame.dataset.themeBound) {
+        frame.dataset.themeBound = '1';
+        frame.addEventListener('load', syncCommentsTheme);
+      }
+    });
+    const dark = root.dataset.theme === 'dark';
+    const utterances = comments.querySelector('iframe.utterances-frame');
+    if (utterances?.contentWindow) {
+      utterances.contentWindow.postMessage(
+        { type: 'set-theme', theme: dark ? 'github-dark' : 'github-light' },
+        'https://utteranc.es',
+      );
+    }
+    const giscus = comments.querySelector('iframe.giscus-frame');
+    if (giscus?.contentWindow) {
+      giscus.contentWindow.postMessage(
+        { giscus: { setConfig: { theme: dark ? 'dark' : 'light' } } },
+        'https://giscus.app',
+      );
+    }
+  }
+
+  const commentsRoot = document.querySelector('[data-comments]');
+  if (commentsRoot) {
+    new MutationObserver(syncCommentsTheme).observe(commentsRoot, { childList: true, subtree: true });
+    commentsRoot.querySelectorAll('iframe').forEach((frame) => frame.addEventListener('load', syncCommentsTheme));
+    window.addEventListener('load', () => window.setTimeout(syncCommentsTheme, 500));
+  }
 
   /* ---------------------------------------------------------------------
      Header and mobile navigation
@@ -175,17 +209,20 @@
     return searchIndex
       .map((doc) => {
         const title = doc.title.toLowerCase();
+        const category = (doc.category || '').toLowerCase();
         const tags = (doc.tags || []).join(' ').toLowerCase();
         const summary = (doc.summary || '').toLowerCase();
         const content = (doc.content || '').toLowerCase();
         let score = 0;
         for (const token of tokens) {
           const inTitle = title.includes(token);
+          const inCategory = category.includes(token);
           const inTags = tags.includes(token);
           const inSummary = summary.includes(token);
           const inContent = content.includes(token);
-          if (!inTitle && !inTags && !inSummary && !inContent) return null;
+          if (!inTitle && !inCategory && !inTags && !inSummary && !inContent) return null;
           if (inTitle) score += 80;
+          if (inCategory) score += 26;
           if (inTags) score += 32;
           if (inSummary) score += 18;
           if (inContent) score += 4;
@@ -202,7 +239,7 @@
   function resultMarkup(doc, tokens, index) {
     return `<a class="search-result" href="${escapeHtml(doc.url)}" data-index="${index}">
       <h3>${highlight(doc.title, tokens)}</h3>
-      <div class="search-result-meta"><span>${escapeHtml(doc.dateLabel || doc.date)}</span>${(doc.tags || []).map((tag) => `<span>#${escapeHtml(tag)}</span>`).join('')}</div>
+      <div class="search-result-meta"><span>${escapeHtml(doc.category || '未分类')}</span><span>${escapeHtml(doc.dateLabel || doc.date)}</span>${(doc.tags || []).map((tag) => `<span>#${escapeHtml(tag)}</span>`).join('')}</div>
       <p>${highlight(snippet(doc, tokens), tokens)}</p>
     </a>`;
   }
@@ -339,8 +376,23 @@
   }
 
   /* ---------------------------------------------------------------------
-     Code copy buttons
+     Copy buttons
      --------------------------------------------------------------------- */
+
+  async function copyText(value) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return;
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = value;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    textarea.remove();
+  }
 
   document.addEventListener('click', async (event) => {
     const button = event.target.closest('.code-copy');
@@ -349,18 +401,7 @@
     const code = block?.querySelector('pre code');
     if (!code) return;
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(code.textContent);
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = code.textContent;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        textarea.remove();
-      }
+      await copyText(code.textContent);
       const original = button.textContent;
       button.textContent = '已复制';
       button.classList.add('is-copied');
@@ -372,6 +413,26 @@
       button.textContent = '复制失败';
     }
   });
+
+  const feedCopy = document.querySelector('[data-copy-feed]');
+  if (feedCopy) {
+    feedCopy.addEventListener('click', async () => {
+      const value = feedCopy.getAttribute('data-copy-value') || '';
+      if (!value) return;
+      const original = feedCopy.textContent;
+      try {
+        await copyText(value);
+        feedCopy.textContent = '已复制订阅地址';
+        feedCopy.classList.add('is-copied');
+      } catch (error) {
+        feedCopy.textContent = '复制失败';
+      }
+      window.setTimeout(() => {
+        feedCopy.textContent = original;
+        feedCopy.classList.remove('is-copied');
+      }, 2000);
+    });
+  }
 
   /* ---------------------------------------------------------------------
      Reading progress and table of contents

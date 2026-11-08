@@ -563,18 +563,32 @@ function renderLayoutFor(options) {
 }
 
 function writeSearchIndex(posts) {
-  const index = posts.map((post) => ({
-    title: post.title,
-    url: withBase(post.url, base),
-    date: post.date,
-    dateLabel: formatDate(post.date, 'short'),
-    category: post.category.name,
-    series: post.series?.title || '',
-    tags: post.tags.map((tag) => tag.name),
-    summary: post.summary,
-    content: truncate(post.plainText, 5000),
-  }));
-  writeFile(path.join(DIST, 'search-index.json'), JSON.stringify(index));
+  const categories = buildCategories(posts);
+  const tags = buildTags(posts);
+  const payload = {
+    posts: posts.map((post) => ({
+      title: post.title,
+      url: withBase(post.url, base),
+      date: post.date,
+      dateLabel: formatDate(post.date, 'short'),
+      category: post.category.name,
+      series: post.series?.title || '',
+      tags: post.tags.map((tag) => tag.name),
+      summary: post.summary,
+      content: truncate(post.plainText, 5000),
+    })),
+    categories: categories.map((category) => ({
+      name: category.name,
+      url: withBase(category.url, base),
+      count: category.count,
+    })),
+    tags: tags.map((tag) => ({
+      name: tag.name,
+      url: withBase(tag.url, base),
+      count: tag.count,
+    })),
+  };
+  writeFile(path.join(DIST, 'search-index.json'), JSON.stringify(payload));
 }
 
 function writeSitemap(posts, pages, series, categories, tags) {

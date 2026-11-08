@@ -127,8 +127,11 @@ try {
 
 try {
   const index = JSON.parse(fs.readFileSync(path.join(DIST, 'search-index.json'), 'utf8'));
-  if (!Array.isArray(index)) errors.push('search-index.json: expected an array');
-  else if (index.some((item) => !item.title || !item.url || !item.category)) errors.push('search-index.json: item missing title, url or category');
+  if (!index || !Array.isArray(index.posts) || !Array.isArray(index.categories) || !Array.isArray(index.tags)) {
+    errors.push('search-index.json: expected posts, categories and tags arrays');
+  } else if (index.posts.some((item) => !item.title || !item.url || !item.category)) {
+    errors.push('search-index.json: post missing title, url or category');
+  }
 } catch (error) {
   errors.push(`search-index.json: ${error.message}`);
 }

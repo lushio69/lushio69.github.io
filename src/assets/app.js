@@ -142,7 +142,6 @@
   let indexPromise = null;
   let searchIndex = null;
   let selectedIndex = -1;
-  let currentResults = [];
   let query = '';
 
   function loadIndex() {
@@ -153,12 +152,14 @@
           return response.json();
         })
         .then((data) => {
-          searchIndex = Array.isArray(data) ? data : [];
+          searchIndex = Array.isArray(data)
+            ? { posts: data, categories: [], tags: [] }
+            : { posts: data.posts || [], categories: data.categories || [], tags: data.tags || [] };
           return searchIndex;
         })
         .catch(() => {
           indexPromise = null;
-          return [];
+          return { posts: [], categories: [], tags: [] };
         });
     }
     return indexPromise;
@@ -193,20 +194,27 @@
   }
 
   function snippet(doc, tokens) {
-    const source = doc.content || doc.summary || '';
+    if (doc.summary) return doc.summary;
+    const source = doc.content || '';
     const lower = source.toLowerCase();
     const position = tokens.map((token) => lower.indexOf(token)).filter((pos) => pos >= 0).sort((a, b) => a - b)[0];
-    if (position === undefined) return doc.summary || source.slice(0, 130);
+    if (position === undefined) return source.slice(0, 130);
     const start = Math.max(0, position - 46);
     const end = Math.min(source.length, position + 110);
     return `${start > 0 ? '…' : ''}${source.slice(start, end).trim()}${end < source.length ? '…' : ''}`;
   }
 
-  function search(value) {
-    const q = value.trim().toLowerCase();
-    const tokens = tokensFor(q);
-    if (!tokens.length || !searchIndex) return [];
-    return searchIndex
+  function searchAll(value) {
+    const tokens = tokensFor(value);
+    const empty = { posts: [], categories: [], tags: [] };
+    if (!tokens.length || !searchIndex) return empty;
+
+    const matchesName = (name) => {
+      const lower = String(name).toLowerCase();
+      return tokens.every((token) => lower.includes(token));
+    };
+
+    const posts = searchIndex.posts
       .map((doc) => {
         const title = doc.title.toLowerCase();
         const category = (doc.category || '').toLowerCase();
@@ -237,26 +245,71 @@
       .filter(Boolean)
       .sort((a, b) => b.score - a.score || b.doc.date.localeCompare(a.doc.date))
       .map((entry) => entry.doc);
+
+    return {
+      posts,
+      categories: searchIndex.categories.filter((item) => matchesName(item.name)),
+      tags: searchIndex.tags.filter((item) => matchesName(item.name)),
+    };
   }
 
-  function resultMarkup(doc, tokens, index) {
-    return `<a class="search-result" href="${escapeHtml(doc.url)}" data-index="${index}">
+  function taxonomyMarkup(item, tokens, type) {
+    return `<a class="search-result tax-result" href="${escapeHtml(item.url)}">
+      <span class="tax-result-name">${highlight(item.name, tokens)}</span>
+      <span class="tax-result-meta">${item.count} 篇文章 · ${type === 'category' ? '分类' : '标签'}</span>
+    </a>`;
+  }
+
+  function postResultMarkup(doc, tokens) {
+    return `<a class="search-result" href="${escapeHtml(doc.url)}">
       <h3>${highlight(doc.title, tokens)}</h3>
       <div class="search-result-meta"><span>${escapeHtml(doc.category || '未分类')}</span>${doc.series ? `<span>专栏 · ${escapeHtml(doc.series)}</span>` : ''}<span>${escapeHtml(doc.dateLabel || doc.date)}</span>${(doc.tags || []).map((tag) => `<span>#${escapeHtml(tag)}</span>`).join('')}</div>
       <p>${highlight(snippet(doc, tokens), tokens)}</p>
     </a>`;
   }
 
-  function renderResults(target, countTarget, results, tokens, emptyMessage) {
-    currentResults = results;
+  function renderResults(target, countTarget, data, tokens, options = {}) {
+    const limitPosts = Number.isFinite(options.limitPosts) ? options.limitPosts : 5;
+    const showMore = options.showMore === true;
     selectedIndex = -1;
-    if (!results.length) {
-      target.innerHTML = `<p class="search-hint">${emptyMessage || '没有找到相关文章，换个关键词试试。'}</p>`;
+    const total = data.categories.length + data.tags.length + data.posts.length;
+
+    if (!total) {
+      target.innerHTML = `<p class="search-hint">${options.emptyMessage || '没有找到匹配的内容，换个关键词试试。'}</p>`;
       if (countTarget) countTarget.textContent = '';
       return;
     }
-    target.innerHTML = results.map((doc, index) => resultMarkup(doc, tokens, index)).join('');
-    if (countTarget) countTarget.textContent = `${results.length} 条结果`;
+
+    const columns = [
+      { title: '分类', en: 'Category', items: data.categories.slice(0, 5), total: data.categories.length, type: 'category' },
+      { title: '标签', en: 'Tag', items: data.tags.slice(0, 5), total: data.tags.length, type: 'tag' },
+      { title: '文章', en: 'Keyword', items: data.posts.slice(0, limitPosts), total: data.posts.length, type: 'post' },
+    ];
+
+    target.innerHTML = `<div class="search-columns">${columns
+      .map((column) => {
+        const body = column.items.length
+          ? column.items
+              .map((item) => (column.type === 'post' ? postResultMarkup(item, tokens) : taxonomyMarkup(item, tokens, column.type)))
+              .join('')
+          : `<p class="search-empty">没有匹配的${column.title}。</p>`;
+        const more =
+          column.type === 'post' && showMore && column.total > column.items.length
+            ? `<a class="search-more" href="${withBase(`/search/?q=${encodeURIComponent(query)}`)}">查看全部 ${column.total} 篇 ${'→'}</a>`
+            : '';
+        return `<section class="search-column">
+          <div class="search-column-head">
+            <span class="search-column-title">${column.title}<small>${column.en}</small></span>
+            <span class="search-column-count">共 ${column.total} ${column.type === 'post' ? '篇' : '个'}</span>
+          </div>
+          <div class="search-column-body">${body}${more}</div>
+        </section>`;
+      })
+      .join('')}</div>`;
+
+    if (countTarget) {
+      countTarget.textContent = `${data.categories.length} 分类 · ${data.tags.length} 标签 · ${data.posts.length} 文章`;
+    }
   }
 
   function setSelected(nextIndex, target) {
@@ -281,8 +334,12 @@
     await loadIndex();
     if (query !== value) return;
     const tokens = tokensFor(value);
-    const results = search(value);
-    renderResults(dialogResults, dialogCount, results, tokens);
+    const data = searchAll(value);
+    renderResults(dialogResults, dialogCount, data, tokens, {
+      limitPosts: 5,
+      showMore: true,
+      emptyMessage: '没有找到匹配的分类、标签或文章。',
+    });
   }
 
   function openSearch() {
@@ -362,8 +419,11 @@
       pageResults.innerHTML = '<p class="search-hint">正在翻找…</p>';
       await loadIndex();
       const tokens = tokensFor(value);
-      const results = search(value);
-      renderResults(pageResults, null, results, tokens);
+      const data = searchAll(value);
+      renderResults(pageResults, null, data, tokens, {
+        limitPosts: data.posts.length,
+        emptyMessage: '没有找到匹配的分类、标签或文章。',
+      });
       const url = new URL(window.location.href);
       if (value.trim()) url.searchParams.set('q', value.trim());
       else url.searchParams.delete('q');
@@ -376,6 +436,32 @@
       window.clearTimeout(pageTimer);
       pageTimer = window.setTimeout(() => updatePage(pageInput.value), 120);
     });
+  }
+
+  /* Tag page filter ----------------------------------------------------- */
+
+  const tagFilterInput = document.querySelector('#tag-filter-input');
+  const tagGrid = document.querySelector('[data-tag-grid]');
+  if (tagFilterInput && tagGrid) {
+    const cards = [...tagGrid.querySelectorAll('[data-tag-name]')];
+    const count = document.querySelector('[data-tag-count]');
+    const empty = document.querySelector('[data-tag-empty]');
+
+    const filterTags = () => {
+      const query = tagFilterInput.value.trim().toLowerCase();
+      let visible = 0;
+      for (const card of cards) {
+        const match = !query || card.dataset.tagName.includes(query);
+        card.hidden = !match;
+        if (match) visible += 1;
+      }
+      if (count) {
+        count.textContent = query ? `找到 ${visible} 个标签` : `${cards.length} 个标签`;
+      }
+      if (empty) empty.hidden = visible !== 0;
+    };
+
+    tagFilterInput.addEventListener('input', filterTags);
   }
 
   /* ---------------------------------------------------------------------

@@ -515,7 +515,7 @@ export function renderPost({ config, base, post, prev, next }) {
 export function renderTags({ config, base, tags }) {
   const cards = tags
     .map(
-      (tag, index) => `<a class="tag-card" href="${withBase(tag.url, base)}">
+      (tag, index) => `<a class="tag-card" href="${withBase(tag.url, base)}" data-tag-name="${escapeAttr(tag.name.toLowerCase())}">
         <span class="tag-card-index">${String(index + 1).padStart(2, '0')}</span>
         <h2>${escapeHtml(tag.name)}</h2>
         <p>${tag.count} 篇文章</p>
@@ -524,13 +524,24 @@ export function renderTags({ config, base, tags }) {
     )
     .join('');
 
-  return `  <section class="page-hero container">
-      <p class="eyebrow">Tags · ${tags.length}</p>
-      <h1>散落的<em>关键词。</em></h1>
-      <p class="page-intro">标签不隶属于某一个分类：同一个“直觉”可以出现在数学分析、线性代数和概率论里。它们负责把跨书架的文章连在一起。</p>
+  return `  <section class="page-hero container tags-hero">
+      <div class="tags-hero-copy">
+        <p class="eyebrow">Tags · ${tags.length}</p>
+        <h1>散落的<em>关键词。</em></h1>
+        <p class="page-intro">标签不隶属于某一个分类：同一个“直觉”可以出现在数学分析、线性代数和概率论里。它们负责把跨书架的文章连在一起。</p>
+      </div>
+      <div class="tag-search-panel">
+        <label for="tag-filter-input">搜索标签</label>
+        <div class="tag-search-field">
+          <span class="search-icon">${ICONS.search}</span>
+          <input id="tag-filter-input" type="search" placeholder="输入标签名…" autocomplete="off" spellcheck="false">
+        </div>
+        <p class="tag-search-count" data-tag-count>${tags.length} 个标签</p>
+      </div>
     </section>
     <section class="container section section-tight">
-      <div class="tag-grid">${cards || '<p class="empty-state">还没有标签。</p>'}</div>
+      <div class="tag-grid" data-tag-grid>${cards || '<p class="empty-state">还没有标签。</p>'}</div>
+      <p class="tag-filter-empty" data-tag-empty hidden>没有找到匹配的标签。</p>
     </section>`;
 }
 

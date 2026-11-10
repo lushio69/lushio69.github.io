@@ -14,7 +14,8 @@
   "bio": "一个对很多东西感兴趣的普通人，选择在接下来的日子里慢慢满足自己的好奇心。",
   "hero": {
     "eyebrow": "数学 · 物理 · 计算机",
-    "title": "Lushio路十九のblog",
+    "title": "Lushio路十九",
+    "titleTail": "のblog",
     "titleAccent": "存放一些书桌前随机涌现的想法",
     "intro": "",
     "formula": "\\int_0^\\infty e^{-x^2}\\,\\dd x=\\frac{\\sqrt{\\pi}}{2}"

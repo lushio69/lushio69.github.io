@@ -651,6 +651,10 @@ ol {
   color: var(--accent);
 }
 
+.hero-title-tail {
+  color: var(--ink-soft);
+}
+
 .hero-intro {
   max-width: 550px;
   margin-top: 30px;

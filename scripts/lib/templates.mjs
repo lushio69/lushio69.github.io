@@ -283,7 +283,7 @@ export function renderHome({ config, base, posts, series, tags, categories, late
   return `  <section class="hero container">
       <div class="hero-copy">
         <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>${escapeHtml(config.hero.eyebrow)}</p>
-        <h1>${escapeHtml(config.hero.title)}<br><em>${escapeHtml(config.hero.titleAccent)}</em></h1>
+        <h1>${escapeHtml(config.hero.title)}${config.hero.titleTail ? `<br><span class="hero-title-tail">${escapeHtml(config.hero.titleTail)}</span>` : ''}<br><em>${escapeHtml(config.hero.titleAccent)}</em></h1>
         ${config.hero.intro ? `<p class="hero-intro">${escapeHtml(config.hero.intro)}</p>` : ''}
         <div class="hero-actions">
           <a class="button" href="${withBase('/posts/', base)}">开始阅读 ${ICONS.arrow}</a>

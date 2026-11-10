@@ -151,12 +151,14 @@ export function renderLayout({
   <footer class="site-footer">
     <div class="container footer-inner">
       <div class="footer-brand">
-        <a class="brand brand-footer" href="${withBase('/', base)}">
-          <span class="brand-mark" aria-hidden="true">${escapeHtml(config.mark || 'L')}</span>
-          <span class="brand-name">${escapeHtml(config.wordmark || config.title)}</span>
-        </a>
-        <p>${escapeHtml(config.tagline)}</p>
-        <p class="footer-note">把每一步写清楚。</p>
+        <div class="footer-brand-row">
+          <a class="brand brand-footer" href="${withBase('/', base)}">
+            <span class="brand-mark" aria-hidden="true">${escapeHtml(config.mark || 'L')}</span>
+            <span class="brand-name">${escapeHtml(config.wordmark || config.title)}</span>
+          </a>
+          <a class="footer-about-link" href="${withBase('/about/', base)}">继续了解我 <span aria-hidden="true">→</span></a>
+        </div>
+        <p>${escapeHtml(config.bio)}</p>
       </div>
       <div class="footer-column">
         <p class="footer-label">浏览</p>
@@ -282,12 +284,11 @@ export function renderHome({ config, base, posts, series, tags, categories, late
       <div class="hero-copy">
         <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>${escapeHtml(config.hero.eyebrow)}</p>
         <h1>${escapeHtml(config.hero.title)}<br><em>${escapeHtml(config.hero.titleAccent)}</em></h1>
-        <p class="hero-intro">${escapeHtml(config.hero.intro)}</p>
+        ${config.hero.intro ? `<p class="hero-intro">${escapeHtml(config.hero.intro)}</p>` : ''}
         <div class="hero-actions">
           <a class="button" href="${withBase('/posts/', base)}">开始阅读 ${ICONS.arrow}</a>
-          <a class="text-link" href="${withBase('/about/', base)}">关于这个博客 ${ICONS.arrowUpRight}</a>
         </div>
-        ${heroFormula ? `<div class="hero-formula"><span class="formula-label">a quiet identity</span>${heroFormula}</div>` : ''}
+        ${heroFormula ? `<div class="hero-formula">${heroFormula}</div>` : ''}
         <div class="hero-foot">
           <span>${posts.length} 篇文章</span>
           <span>${series.length} 个专栏</span>
@@ -345,16 +346,6 @@ export function renderHome({ config, base, posts, series, tags, categories, late
           <a class="text-link" href="${withBase('/tags/', base)}">查看全部标签 ${ICONS.arrow}</a>
         </div>
         <div class="tag-cloud">${tagCloud}</div>
-      </div>
-    </section>
-
-    <section class="section container">
-      <div class="about-strip">
-        <p class="about-quote">“证明不是装饰，<br>而是让直觉接受检查。”</p>
-        <div class="about-strip-body">
-          <p>${escapeHtml(config.bio)}</p>
-          <a class="text-link" href="${withBase('/about/', base)}">继续了解我 ${ICONS.arrow}</a>
-        </div>
       </div>
     </section>`;
 }

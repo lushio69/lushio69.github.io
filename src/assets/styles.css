@@ -645,14 +645,33 @@ ol {
   letter-spacing: -0.04em;
 }
 
-.hero h1 em {
-  font-weight: 400;
-  font-style: italic;
-  color: var(--accent);
+.hero-title {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.hero-title-main {
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .hero-title-tail {
+  grid-column: 2;
+  grid-row: 2;
+  padding-left: 0.1em;
   color: var(--ink-soft);
+}
+
+.hero-title-accent {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  color: var(--accent);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.hero-title:not(.has-tail) .hero-title-accent {
+  grid-row: 2;
 }
 
 .hero-intro {

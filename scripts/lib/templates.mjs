@@ -67,7 +67,11 @@ export function renderLayout({
   noindex = false,
   isHome = false,
 }) {
-  const fullTitle = title ? `${title} — ${config.title}` : `${config.title} — ${config.tagline}`;
+  const fullTitle = title
+    ? `${title} — ${config.title}`
+    : config.tagline
+      ? `${config.title} — ${config.tagline}`
+      : config.title;
   const pageDescription = description || config.description;
   const canonicalUrl = canonical || config.url;
   const image = ogImage || `${config.url.replace(/\/$/, '')}${withBase('/assets/og-default.png', base)}`;

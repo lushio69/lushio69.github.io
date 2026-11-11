@@ -80,8 +80,11 @@
   "friends": [],
   "friendApplyUrl": "https://github.com/lushio69/lushio69.github.io/issues/new",
   "comments": {
-    "provider": "utterances",
+    "provider": "giscus",
     "repo": "lushio69/lushio69.github.io",
+    "repoId": "R_kgDOVnEtAA",
+    "category": "Announcements",
+    "categoryId": "DIC_kwDOVnEtAM4DK3p9",
     "issueTerm": "pathname",
     "label": "comment"
   }

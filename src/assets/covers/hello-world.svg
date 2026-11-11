@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Hello World 博客成立第一篇封面">
+  <defs>
+    <!-- 细网格纹理 -->
+    <pattern id="grid-hw" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#f1f4ee" stroke-opacity="0.07" stroke-width="1"/>
+    </pattern>
+
+    <!-- 颗粒质感 -->
+    <filter id="grain-hw">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.045"/>
+      </feComponentTransfer>
+    </filter>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="1200" height="630" fill="#0e6b54"/>
+  <rect width="1200" height="630" fill="url(#grid-hw)" opacity="0.9"/>
+
+  <!-- 右上抽象圆环装饰，替代函数图 -->
+  <circle cx="960" cy="170" r="178" fill="none" stroke="#f1f4ee" stroke-opacity="0.18" stroke-width="1"/>
+  <circle cx="960" cy="170" r="124" fill="none" stroke="#f1f4ee" stroke-opacity="0.13" stroke-width="1"/>
+  <circle cx="960" cy="170" r="6" fill="#d3a061" opacity="0.9"/>
+
+  <!-- 左侧第一篇标记 -->
+  <circle cx="124" cy="108" r="4" fill="#d3a061"/>
+  <text x="142" y="113" font-family="Consolas, monospace" font-size="12" fill="#cfe1d8" letter-spacing="2.4">
+    POST 001 · THE FIRST ENTRY
+  </text>
+
+  <!-- 主标题 -->
+  <text x="120" y="310" font-family="Georgia, 'Times New Roman', serif" font-size="164" fill="#f1f4ee" letter-spacing="-2">
+    Hello
+  </text>
+  <text x="120" y="438" font-family="Georgia, 'Times New Roman', serif" font-size="124" fill="#d3a061" letter-spacing="-1">
+    World.
+  </text>
+
+  <!-- 标题下的小装饰线 -->
+  <path d="M124 488h86" stroke="#d3a061" stroke-width="3" opacity="0.9"/>
+
+  <!-- 副标题：博客成立 -->
+  <text x="124" y="538" font-family="Georgia, 'Times New Roman', serif" font-size="27" fill="#f1f4ee" letter-spacing="0.5">
+    A BLOG IS BORN
+  </text>
+  <text x="124" y="570" font-family="'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="16" fill="#cfe1d8" letter-spacing="1">
+    记录这个博客的成立
+  </text>
+
+  <!-- 右下角期号/年份 -->
+  <text x="1076" y="552" text-anchor="end" font-family="Consolas, monospace" font-size="12" fill="#cfe1d8" letter-spacing="1.6">
+    2026/11/11
+  </text>
+  <text x="1076" y="574" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#cfe1d8" opacity="0.75" letter-spacing="1.2">
+    ONE SMALL POST AT A TIME
+  </text>
+
+  <!-- 颗粒质感覆盖 -->
+  <rect width="1200" height="630" filter="url(#grain-hw)" opacity="0.9"/>
+
+  <!-- 内边框 -->
+  <rect x="28" y="28" width="1144" height="574" fill="none" stroke="#f1f4ee" stroke-opacity="0.18"/>
+</svg>

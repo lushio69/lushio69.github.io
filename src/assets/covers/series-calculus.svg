@@ -17,9 +17,9 @@
   <path d="M160 610h880" stroke="#f1f4ee" stroke-opacity="0.3"/>
   <path d="M160 610V180" stroke="#f1f4ee" stroke-opacity="0.3"/>
   <text x="150" y="142" font-family="Consolas, monospace" font-size="12" fill="#cfe1d8" letter-spacing="2">A LONG-FORM SERIES</text>
-  <text x="144" y="326" font-family="Georgia, serif" font-size="180" fill="#f1f4ee">100</text>
-  <text x="520" y="310" font-family="Georgia, serif" font-size="44" fill="#f1f4ee">天学会</text>
-  <text x="520" y="370" font-family="Georgia, serif" font-size="44" fill="#d3a061">微积分</text>
+  <text x="144" y="326" font-family="Georgia, serif" font-size="180" fill="#f1f4ee"></text>
+  <text x="520" y="310" font-family="Georgia, serif" font-size="44" fill="#f1f4ee"></text>
+  <text x="520" y="370" font-family="Georgia, serif" font-size="124" fill="#d3a061">微积分之旅</text>
   <text x="158" y="712" font-family="Georgia, serif" font-size="21" fill="#cfe1d8">DAY 01 → DAY 100</text>
   <text x="916" y="712" font-family="Consolas, monospace" font-size="11" fill="#cfe1d8" letter-spacing="1.5">ONE SMALL IDEA AT A TIME</text>
   <rect width="1200" height="800" filter="url(#grain-sc)" opacity="0.9"/>

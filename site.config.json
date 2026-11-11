@@ -1,15 +1,15 @@
 {
-  "title": "Lushio",
+  "title": "Lushio路十九",
   "mark": "∑",
-  "wordmark": "Lushio",
+  "wordmark": "Lushio路十九",
   "description": "一个关于数学、物理与计算机科学的安静博客。",
-  "author": "Lushio",
+  "author": "Lushio路十九",
   "lang": "zh-CN",
   "locale": "zh_CN",
   "url": "https://lushio69.github.io",
   "basePath": "/",
   "startYear": 2026,
-  "tagline": "在公式、定律与代码之间，写下理解的过程。",
+  "tagline": "",
   "categoryOrder": ["数学分析", "线性代数", "概率论", "物理学", "计算机科学", "随笔"],
   "bio": "一个对很多东西感兴趣的普通人，选择在接下来的日子里慢慢满足自己的好奇心。",
   "hero": {
@@ -44,6 +44,10 @@
     }
   ],
   "nav": [
+    {
+      "label": "首页",
+      "url": "/"
+    },
     {
       "label": "文章",
       "url": "/posts/"

@@ -679,14 +679,21 @@ function renderComments(config, base) {
     return '';
   }
 
+  const fallbackUrl = comments.fallbackUrl || `https://github.com/${comments.repo}/discussions`;
+  const notice = `<p class="comments-notice">
+          <span class="comments-notice-icon" aria-hidden="true">!</span>
+          <span>一些 GitHub 加速器（如 Watt Toolkit）可能会影响评论功能。可以暂时关闭加速器，或在设置里停止对 GitHub API 的加速。如果评论功能受影响，可以到<a href="${escapeAttr(fallbackUrl)}" target="_blank" rel="noopener noreferrer">仓库评论区</a>留言。</span>
+        </p>`;
+
   return `<section class="comments" id="comments" data-comments data-provider="${escapeAttr(provider)}">
       <div class="comments-head">
         <div>
           <p class="section-kicker">Discussion</p>
           <h2>讨论</h2>
         </div>
-        <p>评论由 GitHub Issues 托管。登录 GitHub 后即可留言，不需要额外注册。</p>
+        <p>评论由 GitHub Discussions 托管。登录 GitHub 后即可留言，不需要额外注册。</p>
       </div>
+      ${notice}
       <div class="comments-body">${widget}<noscript><p>评论区需要启用 JavaScript。</p></noscript></div>
     </section>`;
 }

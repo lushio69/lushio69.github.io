@@ -86,6 +86,7 @@
     "category": "Announcements",
     "categoryId": "DIC_kwDOVnEtAM4DK3p9",
     "issueTerm": "pathname",
-    "label": "comment"
+    "label": "comment",
+    "fallbackUrl": "https://github.com/lushio69/lushio69.github.io/discussions"
   }
 }

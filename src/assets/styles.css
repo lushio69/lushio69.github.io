@@ -2682,6 +2682,46 @@ input[type="search"]::-webkit-search-decoration {
   color: var(--muted);
 }
 
+.comments-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 22px;
+  padding: 13px 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--copper);
+  background: var(--bg-elevated);
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+.comments-notice-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 1px solid var(--copper);
+  color: var(--copper);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.comments-notice a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-soft);
+  text-underline-offset: 3px;
+}
+
+.comments-notice a:hover {
+  color: var(--accent-ink);
+  text-decoration-color: var(--accent);
+}
+
 .comments-body {
   min-height: 80px;
 }

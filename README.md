@@ -315,11 +315,14 @@ GitHub Pages 是纯静态托管，本身不能运行评论后端。这个项目�
   "repo": "你的用户名/你的仓库",
   "repoId": "从 giscus.app 获取",
   "category": "Announcements",
-  "categoryId": "从 giscus.app 获取"
+  "categoryId": "从 giscus.app 获取",
+  "fallbackUrl": "https://github.com/你的用户名/你的仓库/discussions"
 }
 ```
 
 需要先启用 Discussions，并在 [giscus.app](https://giscus.app/) 安装 App、生成 `repoId` 和 `categoryId`。模板已经支持这两种 provider，配置后会自动切换。
+
+`fallbackUrl` 是可选的备用讨论区地址。评论区上方会显示一条提示：GitHub 加速器（如 Watt Toolkit）可能影响评论功能，可以关闭加速器，或去 `fallbackUrl` 留言。不填时会默认指向 `https://github.com/仓库/discussions`。
 
 > 评论区依赖 GitHub 的第三方脚本。如果访客没有 GitHub 账号，就只能阅读，不能留言。
 

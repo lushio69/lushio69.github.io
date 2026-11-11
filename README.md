@@ -2,6 +2,8 @@
 
 一个安静、克制、零前端框架的跨学科博客。纯 Node.js 静态生成，公式在构建时用 KaTeX 排好，托管在 GitHub Pages，本地双击即可发布。
 
+[博客地址](https://lushio69.github.io)
+
 ![Lushio 博客预览](docs/preview.webp)
 
 ## 特点

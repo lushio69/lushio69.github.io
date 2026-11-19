@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="自学做网站专栏封面">
+  <defs>
+    <pattern id="grid-site" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#f1f4ee" stroke-opacity="0.06" stroke-width="1"/>
+    </pattern>
+    <filter id="grain-site">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.04"/></feComponentTransfer>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="800" fill="#0e6b54"/>
+  <rect width="1200" height="800" fill="url(#grid-site)" opacity="0.8"/>
+
+  <!-- 右上装饰圆环 -->
+  <circle cx="980" cy="180" r="200" fill="none" stroke="#f1f4ee" stroke-opacity="0.12" stroke-width="1"/>
+  <circle cx="980" cy="180" r="142" fill="none" stroke="#f1f4ee" stroke-opacity="0.09" stroke-width="1"/>
+
+  <!-- 浏览器窗口线框图：替换原来的函数曲线区域 -->
+  <g fill="none" stroke="#f1f4ee">
+    <rect x="160" y="360" width="540" height="310" rx="14"
+          stroke-opacity="0.30" stroke-width="2"/>
+    <path d="M160 404H700" stroke-opacity="0.24"/>
+
+    <circle cx="188" cy="382" r="4" fill="#f1f4ee" fill-opacity="0.35" stroke="none"/>
+    <circle cx="210" cy="382" r="4" fill="#f1f4ee" fill-opacity="0.22" stroke="none"/>
+    <circle cx="232" cy="382" r="4" fill="#f1f4ee" fill-opacity="0.16" stroke="none"/>
+
+    <rect x="270" y="372" width="300" height="20" rx="10"
+          stroke-opacity="0.16"/>
+
+    <path d="M210 450H470" stroke-opacity="0.16"/>
+    <path d="M210 484H520" stroke-opacity="0.12"/>
+    <path d="M210 518H430" stroke-opacity="0.10"/>
+
+    <rect x="210" y="552" width="140" height="70" rx="8" stroke-opacity="0.12"/>
+    <rect x="380" y="552" width="140" height="70" rx="8" stroke-opacity="0.10"/>
+    <rect x="550" y="552" width="110" height="70" rx="8" stroke-opacity="0.08"/>
+  </g>
+
+  <text x="250" y="596" font-family="Consolas, 'SFMono-Regular', monospace"
+        font-size="24" fill="#cfe1d8" fill-opacity="0.42">&lt;/&gt;</text>
+
+  <!-- 顶部小标签 -->
+  <text x="150" y="142" font-family="Consolas, monospace" font-size="12"
+        fill="#cfe1d8" letter-spacing="2">A HANDS-ON SERIES</text>
+
+  <!-- 主标题 -->
+  <text x="560" y="340" font-family="Georgia, 'Songti SC', 'Noto Serif SC', serif"
+        font-size="124" fill="#d3a061">自学做网站</text>
+
+  <!-- 底部信息 -->
+  <text x="158" y="736" font-family="Georgia, 'Songti SC', 'Noto Serif SC', serif"
+        font-size="21" fill="#cfe1d8">FROM ZERO → FIRST SITE</text>
+  <text x="916" y="736" font-family="Consolas, monospace" font-size="11"
+        fill="#cfe1d8" letter-spacing="1.5">LEARN BY BUILDING</text>
+
+  <!-- 颗粒与边框 -->
+  <rect width="1200" height="800" filter="url(#grain-site)" opacity="0.9"/>
+  <rect x="28" y="28" width="1144" height="744" fill="none"
+        stroke="#f1f4ee" stroke-opacity="0.18"/>
+</svg>
